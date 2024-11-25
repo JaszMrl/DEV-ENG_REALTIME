@@ -315,16 +315,17 @@
                 <h2>Easy Mode</h2>
                 <p>Select an audio file and click Predict to analyze the sound:</p>
 
-            <!-- Audio List -->
-            <div class="audio-list">
-                {% for file in audio_files %}
-                <div class="audio-item" onclick="selectAudio('{{ file }}', this)">
-                    <i class="fas fa-music"></i>
-                    <span>{{ file }}</span>
-                    <button onclick="playAudio('/audio/{{ file }}'); event.stopPropagation()">▶️ Play</button>
+                <!-- Audio List -->
+                <div class="audio-list">
+                    {% for file in audio_files %}
+                    <div class="audio-item" onclick="selectAudio('{{ file }}', this)">
+                        <i class="fas fa-music"></i>
+                        <span>{{ file }}</span>
+                        <button onclick="playAudio('/audio/{{ file }}'); event.stopPropagation()">▶️ Play</button>
+                    </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
-            </div>
+
                 <!-- Audio Player -->
                 <div class="audio-player-container">
                     <audio id="audioPlayer" controls>
