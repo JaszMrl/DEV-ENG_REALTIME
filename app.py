@@ -48,18 +48,29 @@ def lesson1_learn():
 
 @app.route('/lesson2')
 def lesson2():
-    """Render the Lesson 2 page."""
+    """Render the Lesson 2 Practice page."""
     return render_template('lesson2.html')
+
+@app.route('/lesson2_learn')
+def lesson2_learn():
+    """Render the Lesson 2 Overview page."""
+    return render_template('lesson2_learn.html')
 
 @app.route('/lesson3')
 def lesson3():
-    """Render the Lesson 3 page."""
+    """Render the Lesson 3 Practice page."""
     return render_template('lesson3.html')
+
+@app.route('/lesson3_learn')
+def lesson3_learn():
+    """Render the Lesson 3 Overview page."""
+    return render_template('lesson3_learn.html')
 
 @app.route('/lesson4')
 def lesson4():
     """Render the Lesson 4 page (Pronunciation)."""
     return render_template('lesson4.html')
+
 
 
 # New route to generate TTS audio

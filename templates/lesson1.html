@@ -5,20 +5,78 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lesson 1 - Basic Vocabulary</title>
     <link rel="stylesheet" href="/static/lesson1.css">
+<script>
 
-    <script>
         // Predefined questions array
         const questions = [
-            { question: "What is the synonym of 'big'?", options: ["Small", "Large", "Tiny"], answer: "Large" },
-            { question: "What is the opposite of 'hot'?", options: ["Warm", "Cold", "Hotter"], answer: "Cold" },
-            { question: "What is the synonym of 'happy'?", options: ["Joyful", "Sad", "Angry"], answer: "Joyful" },
-            { question: "What is the opposite of 'fast'?", options: ["Slow", "Quick", "Speedy"], answer: "Slow" },
-            { question: "What does 'consume' mean?", options: ["To drink", "To eat", "To cook"], answer: "To eat" },
-            { question: "What is the synonym of 'beautiful'?", options: ["Ugly", "Pretty", "Dirty"], answer: "Pretty" },
-            { question: "What is the opposite of 'early'?", options: ["Late", "Fast", "Quick"], answer: "Late" },
-            { question: "What is the synonym of 'small'?", options: ["Big", "Tiny", "Large"], answer: "Tiny" },
-            { question: "What is the opposite of 'dark'?", options: ["Light", "Dim", "Black"], answer: "Light" },
-        ];
+        // Synonyms (Harder)
+        { 
+            question: "What is the synonym of 'meticulous'?", 
+            options: ["Careful", "Casual", "Hasty"], 
+            answer: "Careful" 
+        },
+        { 
+            question: "What is the synonym of 'elaborate'?", 
+            options: ["Detailed", "Simple", "Plain"], 
+            answer: "Detailed" 
+        },
+        { 
+            question: "What is the synonym of 'ambiguous'?", 
+            options: ["Unclear", "Definite", "Transparent"], 
+            answer: "Unclear" 
+        },
+        
+        // Antonyms (Harder)
+        { 
+            question: "What is the opposite of 'benevolent'?", 
+            options: ["Cruel", "Kind", "Generous"], 
+            answer: "Cruel" 
+        },
+        { 
+            question: "What is the opposite of 'conceal'?", 
+            options: ["Reveal", "Hide", "Cover"], 
+            answer: "Reveal" 
+        },
+        { 
+            question: "What is the opposite of 'mandatory'?", 
+            options: ["Optional", "Required", "Obligatory"], 
+            answer: "Optional" 
+        },
+        
+        // Word Families (Advanced)
+        { 
+            question: "Which word belongs to the same word family as 'decide'?", 
+            options: ["Decision", "Decisive", "Both"], 
+            answer: "Both" 
+        },
+        { 
+            question: "Which word belongs to the same word family as 'apply'?", 
+            options: ["Application", "Applicable", "Both"], 
+            answer: "Both" 
+        },
+        { 
+            question: "Which word belongs to the same word family as 'create'?", 
+            options: ["Creative", "Creation", "Both"], 
+            answer: "Both" 
+        },
+        
+        // Collocations (Advanced)
+        { 
+            question: "Which word collocates with 'deep'?", 
+            options: ["Regret", "Sleep", "Both"], 
+            answer: "Both" 
+        },
+        { 
+            question: "Which word collocates with 'take'?", 
+            options: ["Responsibility", "Advice", "Both"], 
+            answer: "Responsibility" 
+        },
+        { 
+            question: "Which word collocates with 'highly'?", 
+            options: ["Skilled", "Tall", "Both"], 
+            answer: "Skilled" 
+        },
+    ];
 
         let currentPhraseIndex = 0;
         let randomPhrases = [];
@@ -28,7 +86,7 @@
         // Shuffle and pick random questions
         function selectRandomPhrases() {
             const shuffled = questions.sort(() => Math.random() - 0.5);
-            randomPhrases = shuffled.slice(0, 5); // Pick 5 random questions for now
+            randomPhrases = shuffled.slice(0, 10); // Pick 5 random questions for now
             totalQuestions = randomPhrases.length;
         }
 
