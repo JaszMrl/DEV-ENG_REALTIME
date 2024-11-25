@@ -38,6 +38,7 @@ body {
     margin-bottom: 20px; /* Add spacing below the grid */
     width: 100%;
     max-width: 800px;
+    animation: fadeIn 1s ease-in-out; /* Fade-in effect for grid */
 }
 
 .chapter-item {
