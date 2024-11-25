@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lesson 4 - Pronunciation</title>
+    <link rel="stylesheet" href="/static/lesson4.css">
+    <script>
+        // Words to practice pronunciation
+        const pronunciationWords = [
+            "apple",
+            "banana",
+            "cherry",
+            "grape",
+            "orange"
+        ];
+
+        let currentWordIndex = 0;
+
+        // Load current word and request TTS
+        function loadWord() {
+            const wordContainer = document.getElementById("word");
+            const audioContainer = document.getElementById("audio-container");
+            const word = pronunciationWords[currentWordIndex];
+
+            wordContainer.textContent = word;
+            generateAudio(word);  // Generate TTS for the current word
+        }
+
+        // Request audio file from Flask server using TTS
+        // Request audio file from the static directory
+        function generateAudio(word) {
+            const audioContainer = document.getElementById("audio-container");
+
+            // Assuming the audio files are stored in the 'static/generated_audio' folder
+            audioContainer.src = `/static/generated_audio/${word}.mp3`;
+        }
+
+
+        // Play the correct pronunciation audio
+        function playAudio() {
+            const audioContainer = document.getElementById("audio-container");
+            audioContainer.play();
+        }
+
+        // Record the user's pronunciation (simulated)
+        function recordPronunciation() {
+            alert("Recording your pronunciation...");
+        }
+
+        // Submit pronunciation and check if correct (simulated)
+        function submitPronunciation() {
+            const isCorrect = Math.random() > 0.5; // Simulate 50% chance of correct answer
+            if (isCorrect) {
+                alert("Correct pronunciation!");
+            } else {
+                alert("Incorrect pronunciation, try again.");
+            }
+
+            currentWordIndex++;
+            if (currentWordIndex < pronunciationWords.length) {
+                loadWord();
+            } else {
+                alert("Lesson complete!");
+            }
+        }
+
+        window.onload = loadWord; // Load the first word on page load
+    </script>
+</head>
+<body>
+    <header class="test-header">
+        <h1>Lesson 4: Pronunciation Practice</h1>
+    </header>
+    <main class="test-content">
+        <section id="lesson-container">
+            <h2 id="word"></h2>
+            <audio id="audio-container" preload="auto"></audio>
+            <div class="controls">
+                <button onclick="playAudio()">Play Pronunciation</button>
+                <button onclick="recordPronunciation()">Record Your Pronunciation</button>
+                <button onclick="submitPronunciation()">Submit Pronunciation</button>
+            </div>
+        </section>
+    </main>
+    <footer class="test-footer">
+        <a href="{{ url_for('home') }}" class="back-button">Back to Home</a>
+    </footer>
+</body>
+</html>

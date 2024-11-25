@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lesson 2 - Common Phrases for Speaking</title>
+    <link rel="stylesheet" href="/static/lesson2.css">
+    <script>
+        // Predefined pool of phrases
+        const phrases = [
+            { question: "How do you greet someone in the morning?", options: ["Good night", "Good morning", "See you"], answer: "Good morning" },
+            { question: "What do you say when leaving a place?", options: ["Hello", "Goodbye", "Nice to meet you"], answer: "Goodbye" },
+            { question: "How do you ask for help politely?", options: ["Help me now!", "Can you please help me?", "Why don't you help me?"], answer: "Can you please help me?" },
+            { question: "How do you thank someone?", options: ["Good job!", "Thank you!", "What's up?"], answer: "Thank you!" },
+            { question: "What do you say to apologize?", options: ["Excuse me", "Sorry", "Forget it"], answer: "Sorry" },
+            { question: "What do you say to introduce yourself?", options: ["My name is...", "See you later", "Do you need help?"], answer: "My name is..." },
+            { question: "What do you say when you are happy?", options: ["I am so happy!", "Why me?", "I can't do this!"], answer: "I am so happy!" },
+            { question: "What do you say when someone sneezes?", options: ["Bless you", "Thank you", "Excuse me"], answer: "Bless you" },
+            { question: "How do you invite someone?", options: ["Come with me", "Would you like to join me?", "You have to come"], answer: "Would you like to join me?" },
+            { question: "What do you say when you don't know the answer?", options: ["I don't know", "I will check", "Leave me alone"], answer: "I don't know" },
+            { question: "How do you say you're hungry?", options: ["I want food", "I'm hungry", "I need money"], answer: "I'm hungry" },
+            { question: "What do you say when you're tired?", options: ["I'm exhausted", "I'm very sad", "I'm very angry"], answer: "I'm exhausted" },
+            { question: "What do you say when you're surprised?", options: ["Oh my!", "That's boring", "I knew it"], answer: "Oh my!" },
+            { question: "How do you respond to 'Thank you'?", options: ["You're welcome", "That's fine", "Never"], answer: "You're welcome" },
+            { question: "How do you express agreement?", options: ["Yes, that's right", "Not really", "I'm unsure"], answer: "Yes, that's right" },
+            // Add more phrases up to 40+ for randomness
+        ];
+
+        let currentPhraseIndex = 0;
+        let randomPhrases = [];
+        let score = 0; // Track the user's score
+        const totalQuestions = 10; // Fixed to 10 questions
+
+        // Shuffle and pick 10 random phrases
+        function selectRandomPhrases() {
+            const shuffled = phrases.sort(() => Math.random() - 0.5);
+            randomPhrases = shuffled.slice(0, totalQuestions);
+        }
+
+        // Load phrase to the DOM
+        function loadPhrase() {
+            const questionContainer = document.getElementById("question");
+            const optionsContainer = document.getElementById("options");
+            const phrase = randomPhrases[currentPhraseIndex];
+
+            questionContainer.textContent = phrase.question;
+
+            // Clear previous options
+            optionsContainer.innerHTML = "";
+            phrase.options.forEach((option) => {
+                const button = document.createElement("button");
+                button.textContent = option;
+                button.className = "option";
+                button.onclick = () => checkAnswer(option);
+                optionsContainer.appendChild(button);
+            });
+        }
+
+        // Check the selected answer
+        function checkAnswer(selectedOption) {
+            const phrase = randomPhrases[currentPhraseIndex];
+            if (selectedOption === phrase.answer) {
+                score++; // Increment score for correct answer
+                alert("Correct!");
+            } else {
+                alert(`Incorrect. The correct answer is: ${phrase.answer}`);
+            }
+
+            currentPhraseIndex++;
+
+            if (currentPhraseIndex < randomPhrases.length) {
+                loadPhrase(); // Load the next phrase
+            } else {
+                showScore(); // Show the final score
+            }
+        }
+
+        // Display the user's score
+        function showScore() {
+            const questionSection = document.getElementById("question-section");
+            questionSection.innerHTML = `
+                <h2>Your Score</h2>
+                <p>You scored ${score} out of ${totalQuestions}.</p>
+                
+            `;
+        }
+
+        // Initialize the quiz
+        window.onload = () => {
+            selectRandomPhrases(); // Select random phrases on load
+            loadPhrase(); // Load the first phrase
+        };
+    </script>
+</head>
+<body>
+    <header class="test-header">
+        <h1>Lesson 2: Common Phrases for Speaking</h1>
+    </header>
+    <main class="test-content">
+        <section id="question-section">
+            <h2 id="question"></h2>
+            <div id="options" class="options"></div>
+        </section>
+    </main>
+    <footer class="test-footer">
+        <a href="{{ url_for('home') }}" class="back-button">Back to Home</a>
+    </footer>
+</body>
+</html>

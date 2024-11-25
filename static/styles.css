@@ -1,0 +1,542 @@
+/* General Styles */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Poppins', sans-serif;
+    background-color: #f7f7f7;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+/* App Container */
+.app-container {
+    background-color: white;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    width: 1700px;
+    max-width: 100%;
+    display: flex;
+    overflow: hidden;
+    height: 90vh;
+}
+
+/* Sidebar */
+.sidebar {
+    background-color: #333;
+    color: white;
+    padding: 20px;
+    width: 250px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.sidebar nav ul {
+    list-style: none; /* Remove bullet points */
+    padding: 0;
+    margin: 0;
+    width: 100%;
+}
+
+.sidebar nav ul li {
+    margin: 15px 0; /* Space between links */
+    width: 100%; /* Make each link fill the sidebar's width */
+}
+
+.sidebar nav ul li a {
+    text-decoration: none; /* Remove underline from links */
+    color: #ffffff; /* White link text */
+    font-size: 1.1rem; /* Slightly larger text for readability */
+    padding: 10px 20px; /* Add padding inside links */
+    display: block; /* Ensure the link is a block element */
+    border-radius: 8px; /* Rounded corners for links */
+    transition: background 0.3s ease, transform 0.3s ease; /* Smooth hover effect */
+}
+
+.sidebar nav ul li a:hover {
+    background-color: #3B82F6; /* Brighter blue for hover */
+    transform: translateX(5px); /* Slight shift on hover */
+}
+
+.sidebar nav ul li a.active {
+    background-color: #60A5FA; /* Highlight the active link */
+    font-weight: 600; /* Make the active link bold */
+    transform: translateX(5px);
+}
+
+.sidebar .footer {
+    margin-top: auto; /* Push the footer to the bottom */
+    font-size: 0.9rem;
+    color: #d1d5db; /* Light gray text */
+    text-align: center;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2); /* Subtle border above footer */
+}
+
+/* Main Content */
+.main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* Page Visibility */
+.page, .mode-page {
+    display: none;
+}
+
+.page.active, .mode-page.active {
+    display: block;
+}
+
+/* Header */
+header {
+    background: linear-gradient(90deg, #1E3A8A, #2563EB); /* Modern gradient */
+    color: white;
+    text-align: center;
+    padding: 30px 20px; /* Increased padding for breathing room */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Slightly stronger shadow */
+    position: sticky; /* Keeps the header fixed at the top */
+    top: 0;
+    z-index: 1000;
+}
+
+header .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Space between logo icon and text */
+    font-size: 1.8rem; /* Larger font for the logo */
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+header .logo i {
+    font-size: 2rem; /* Larger icon */
+    color: #FFD700; /* Gold for a contrasting highlight */
+}
+
+header nav {
+    display: flex;
+    gap: 30px; /* Space between navigation links */
+}
+
+header nav a {
+    text-decoration: none; /* Remove underline from links */
+    color: white; /* White text */
+    font-size: 1rem;
+    font-weight: 500;
+    padding: 10px 15px;
+    border-radius: 5px;
+    transition: background 0.3s, transform 0.2s; /* Smooth transition for hover effects */
+}
+
+header nav a:hover {
+    background: rgba(255, 255, 255, 0.2); /* Transparent white background */
+    transform: translateY(-3px); /* Slight upward shift on hover */
+}
+
+header .cta-buttons {
+    display: flex;
+    gap: 15px;
+}
+
+header .cta-buttons .btn-primary {
+    background: #FFD700; /* Gold CTA for attention */
+    color: #1E3A8A; /* Contrast with the background */
+    padding: 10px 20px;
+    font-weight: 600;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s, transform 0.3s;
+}
+
+header .cta-buttons .btn-primary:hover {
+    background: #FFC107; /* Slightly lighter gold */
+    transform: scale(1.05); /* Enlarge slightly on hover */
+}
+
+header .cta-buttons .btn-secondary {
+    background: transparent;
+    color: white;
+    padding: 10px 20px;
+    border: 2px solid white; /* White border for contrast */
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s, color 0.3s, transform 0.3s;
+}
+
+header .cta-buttons .btn-secondary:hover {
+    background: white; /* Invert background and text on hover */
+    color: #1E3A8A;
+    transform: scale(1.05); /* Enlarge slightly on hover */
+}
+
+/* Buttons */
+button, .speech-btn, .lesson-card button {
+    padding: 10px 20px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+button:hover, .speech-btn:hover, .lesson-card button:hover {
+    background-color: #0056b3;
+    transform: scale(1.05);
+}
+
+.speech-btn {
+    padding: 15px 30px;
+    font-size: 1.2rem;
+    margin: 20px auto;
+    display: block;
+    border-radius: 10px;
+}
+
+/* Lesson Section */
+.lesson-section {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    padding: 20px;
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+.lesson-card {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    text-align: center;
+    transition: transform 0.3s;
+}
+
+.lesson-card:hover {
+    transform: translateY(-5px);
+}
+
+.lesson-card h2 {
+    font-size: 1.3rem;
+    color: #007BFF;
+}
+
+.lesson-card p {
+    font-size: 1rem;
+    color: #333;
+}
+
+/* Vocabulary Section */
+.vocab-section {
+    text-align: center;
+    padding: 20px;
+}
+
+.vocab-quiz {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.quiz-item {
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    width: 250px;
+}
+
+.quiz-item img {
+    width: 100px;
+    height: 100px;
+    margin-bottom: 15px;
+}
+
+.quiz-options {
+    display: flex;
+    justify-content: space-around;
+    gap: 10px;
+}
+
+.quiz-options button:hover {
+    background-color: #0056b3;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+.modal-content {
+    background-color: #f9f9f9;
+    margin: 10% auto;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    width: 40%;
+    text-align: center;
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: #000;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* General Page Animations */
+
+/* Audio Player Container */
+.audio-player-container {
+    display: flex; /* Flexbox for horizontal alignment */
+    justify-content: center; /* Center horizontally */
+    margin-top: 20px; /* Adds spacing from the audio list above */
+    text-align: center; /* Ensures any text inside is centered */
+}
+
+/* Audio Player Styling */
+audio {
+    width: 100%; /* Full width of the container */
+    max-width: 600px; /* Restrict maximum width for responsiveness */
+    border: 2px solid #3498db;
+    border-radius: 8px;
+    padding: 5px;
+    background-color: #f9f9f9;
+}
+
+
+
+/* Fade-In Animation for Pages */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Slide-In Animation */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Dropdown Fade Animation */
+@keyframes dropdownFade {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Modal Fade-Slide Animation */
+@keyframes fadeSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Zoom-In Animation */
+@keyframes zoomIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Fade-In-Up Animation */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Slide-Up Animation */
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Element-Specific Animations */
+
+/* Page Container Fade-In */
+#easy-page {
+    animation: fadeIn 1s ease-in-out;
+}
+
+/* Dropdown Animation */
+.afs {
+    opacity: 0;
+    transform: translateY(-10px);
+    animation: dropdownFade 1s ease-out forwards;
+}
+
+/* Audio Player Slide-In */
+.audio-player-container {
+    opacity: 0;
+    transform: translateX(-20px);
+    animation: slideIn 1s ease-in-out forwards;
+    animation-delay: 0.5s;
+}
+
+/* Modal Fade-Slide-In */
+.modal {
+    animation: fadeSlideIn 0.5s ease forwards;
+}
+
+/* Lesson Cards Staggered Fade-In */
+.lesson-card {
+    opacity: 0;
+    transform: scale(0.9);
+    animation: fadeInUp 0.8s ease-in-out forwards;
+}
+
+.lesson-card:nth-child(1) {
+    animation-delay: 0.2s;
+}
+
+.lesson-card:nth-child(2) {
+    animation-delay: 0.4s;
+}
+
+.lesson-card:nth-child(3) {
+    animation-delay: 0.6s;
+}
+
+.lesson-card:nth-child(4) {
+    animation-delay: 0.8s;
+}
+
+/* Header Zoom-In */
+header h1 {
+    opacity: 0;
+    transform: scale(0.9);
+    animation: zoomIn 1s ease-in-out forwards;
+}
+
+/* Subheader Slide-In */
+header h2 {
+    opacity: 0;
+    transform: translateX(-20px);
+    animation: slideIn 1s ease-out forwards;
+    animation-delay: 0.5s;
+}
+
+/* Footer Slide-Up */
+footer {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: slideUp 1s ease-out forwards;
+    animation-delay: 1s;
+}
+
+/* Predict Button Container */
+.predict-container {
+    display: flex;
+    justify-content: center; /* Center the button horizontally */
+    margin-top: 20px; /* Space below the audio player */
+}
+
+/* Predict Button */
+.predict-button {
+    background-color: #3498db;
+    color: #fff;
+    font-size: 18px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.predict-button:hover {
+    background-color: #0056b3;
+    transform: scale(1.05); /* Slightly enlarge on hover */
+}
+
+/* Predict Button Hover Effect */
+.predict-button {
+    transition: transform 0.3s ease, background-color 0.3s ease;
+}
+
+.predict-button:hover {
+    transform: scale(1.1); /* Slightly enlarge on hover */
+    background-color: #0056b3; /* Darker shade of blue */
+}

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lesson 1 - Basic Vocabulary</title>
+    <link rel="stylesheet" href="/static/lesson1.css">
+
+    <script>
+        // Predefined questions array
+        const questions = [
+            { question: "What is the synonym of 'big'?", options: ["Small", "Large", "Tiny"], answer: "Large" },
+            { question: "What is the opposite of 'hot'?", options: ["Warm", "Cold", "Hotter"], answer: "Cold" },
+            { question: "What is the synonym of 'happy'?", options: ["Joyful", "Sad", "Angry"], answer: "Joyful" },
+            { question: "What is the opposite of 'fast'?", options: ["Slow", "Quick", "Speedy"], answer: "Slow" },
+            { question: "What does 'consume' mean?", options: ["To drink", "To eat", "To cook"], answer: "To eat" },
+            { question: "What is the synonym of 'beautiful'?", options: ["Ugly", "Pretty", "Dirty"], answer: "Pretty" },
+            { question: "What is the opposite of 'early'?", options: ["Late", "Fast", "Quick"], answer: "Late" },
+            { question: "What is the synonym of 'small'?", options: ["Big", "Tiny", "Large"], answer: "Tiny" },
+            { question: "What is the opposite of 'dark'?", options: ["Light", "Dim", "Black"], answer: "Light" },
+        ];
+
+        let currentPhraseIndex = 0;
+        let randomPhrases = [];
+        let score = 0;
+        let totalQuestions = 0;
+
+        // Shuffle and pick random questions
+        function selectRandomPhrases() {
+            const shuffled = questions.sort(() => Math.random() - 0.5);
+            randomPhrases = shuffled.slice(0, 5); // Pick 5 random questions for now
+            totalQuestions = randomPhrases.length;
+        }
+
+        // Load the current question
+        function loadPhrase() {
+            const questionContainer = document.getElementById("question");
+            const optionsContainer = document.getElementById("options");
+            const phrase = randomPhrases[currentPhraseIndex];
+
+            questionContainer.textContent = phrase.question;
+
+            // Clear and load options
+            optionsContainer.innerHTML = "";
+            phrase.options.forEach((option) => {
+                const button = document.createElement("button");
+                button.textContent = option;
+                button.className = "option";
+                button.onclick = () => checkAnswer(option);
+                optionsContainer.appendChild(button);
+            });
+        }
+
+        // Check the selected answer
+        function checkAnswer(selectedOption) {
+            const phrase = randomPhrases[currentPhraseIndex];
+            if (selectedOption === phrase.answer) {
+                alert("Correct!");
+                score++;
+            } else {
+                alert(`Incorrect. The correct answer is: ${phrase.answer}`);
+            }
+
+            currentPhraseIndex++;
+
+            if (currentPhraseIndex < randomPhrases.length) {
+                loadPhrase(); // Load the next phrase
+            } else {
+                showScore(); // Show the final score
+            }
+        }
+
+        // Display the user's score
+        function showScore() {
+        const questionSection = document.getElementById("question-section");
+        questionSection.innerHTML = `
+            <div class="score-section">
+                <h2>Your Score</h2>
+                <p>You scored ${score} out of ${totalQuestions}.</p>
+            </div>
+        `;
+}
+        // Initialize the quiz
+        window.onload = () => {
+            selectRandomPhrases(); // Prepare random questions
+            loadPhrase(); // Load the first question
+        };
+    </script>
+</head>
+<body>
+    <header class="test-header">
+        <h1>Lesson 1: Vocabulary Practice</h1>
+    </header>
+    <main class="test-content">
+        <section id="question-section">
+            <h2 id="question"></h2>
+            <div id="options" class="options"></div>
+        </section>
+    </main>
+    <footer class="test-footer">
+        <a href="{{ url_for('home') }}" class="back-button">Back to Home</a>
+    </footer>
+</body>
+</html>
