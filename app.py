@@ -38,8 +38,13 @@ def home():
 
 @app.route('/lesson1')
 def lesson1():
-    """Render the Lesson 1 page."""
+    """Render the Lesson 1 Practice page."""
     return render_template('lesson1.html')
+
+@app.route('/lesson1_learn')
+def lesson1_learn():
+    """Render the Lesson 1 Overview page."""
+    return render_template('lesson1_learn.html')
 
 @app.route('/lesson2')
 def lesson2():
@@ -55,6 +60,7 @@ def lesson3():
 def lesson4():
     """Render the Lesson 4 page (Pronunciation)."""
     return render_template('lesson4.html')
+
 
 # New route to generate TTS audio
 @app.route('/generate_audio/<text>', methods=['GET'])

@@ -4,21 +4,22 @@ import joblib
 import librosa
 import numpy as np
 import pandas as pd
+from google.cloud import texttospeech
 
 # Initialize Flask app
 app = Flask(__name__)
 
 # Paths for audio files and trained model
-AUDIO_FILES_DIR = '/Users/PC/Desktop/SENIOR PROJECT 3/Animal sound'  # Directory to store audio files
-MODEL_PATH = '/Users/PC/Desktop/SENIOR PROJECT 3/decision_tree_model.joblib'
+AUDIO_FILES_DIR = 'Animal sound'  # Directory to store audio files
+MODEL_PATH = 'decision_tree_model.joblib'
+TTS_AUDIO_DIR = 'static\Generated_audio'  # Directory for generated TTS audio
 
 # Ensure the audio directory exists
 os.makedirs(AUDIO_FILES_DIR, exist_ok=True)
+os.makedirs(TTS_AUDIO_DIR, exist_ok=True)
 
 # Load the trained model
 clf = None
-
-
 def load_model():
     """Load the trained decision tree model."""
     global clf
@@ -27,7 +28,6 @@ def load_model():
         print(f"Model loaded successfully from: {MODEL_PATH}")
     else:
         print(f"Model not found at: {MODEL_PATH}. Please train the model first.")
-
 
 @app.route('/')
 def home():
@@ -53,21 +53,54 @@ def lesson3():
 
 @app.route('/lesson4')
 def lesson4():
-    """Render the Lesson 4 page."""
+    """Render the Lesson 4 page (Pronunciation)."""
     return render_template('lesson4.html')
 
+# New route to generate TTS audio
+@app.route('/generate_audio/<text>', methods=['GET'])
+def generate_audio(text):
+    """Generate speech using Google Cloud Text-to-Speech and return an audio file."""
+    try:
+        # Instantiate Google TTS client
+        client = texttospeech.TextToSpeechClient()
 
+        # Set the text input to be synthesized
+        synthesis_input = texttospeech.SynthesisInput(text=text)
+
+        # Choose the language and SSML voice gender
+        voice = texttospeech.VoiceSelectionParams(
+            language_code="en-US", ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
+        )
+
+        # Set the audio file configuration
+        audio_config = texttospeech.AudioConfig(
+            audio_encoding=texttospeech.AudioEncoding.MP3
+        )
+
+        # Request the synthesis of the speech
+        response = client.synthesize_speech(
+            input=synthesis_input, voice=voice, audio_config=audio_config
+        )
+
+        # Save the audio content to a file in the static folder
+        audio_filename = os.path.join(app.static_folder, 'Generated_Audio', f"{text.replace(' ', '_')}.mp3")
+        with open(audio_filename, "wb") as out:
+            out.write(response.audio_content)
+
+        # Return the URL for the generated audio file
+        return jsonify({"audio_url": f"/static/Generated_Audio/{os.path.basename(audio_filename)}"})
+
+    except Exception as e:
+        print(f"Error generating audio: {e}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/audio/<filename>')
 def serve_audio(filename):
     """Serve audio files for playback."""
     try:
-        print(f"Serving file: {filename}")  # Debugging line
         return send_from_directory(AUDIO_FILES_DIR, filename)
     except FileNotFoundError:
-        print(f"File {filename} not found.")  # Debugging line
         return f"File {filename} not found.", 404
-    
 
 @app.route('/process-transcription', methods=['POST'])
 def process_transcription():
@@ -79,23 +112,15 @@ def process_transcription():
         if not transcription:
             return jsonify({"error": "No transcription provided."}), 400
 
-        # Debugging: Print the transcription
-        print(f"Received transcription: {transcription}")
-
-        # (Optional) Process the transcription (e.g., save to a file or analyze it)
-        # For now, just return the transcription as a response
         return jsonify({"message": "Transcription received.", "transcription": transcription})
     except Exception as e:
         print(f"Error processing transcription: {e}")
         return jsonify({"error": str(e)}), 500
 
-    
-
 @app.route('/predict-audio', methods=['POST'])
 def predict_audio():
     """Predict the class of the selected audio file."""
     try:
-        # Check if the request contains JSON data
         if not request.is_json:
             return jsonify({"error": "Invalid content type. Expected 'application/json'."}), 415
 
@@ -107,8 +132,6 @@ def predict_audio():
         audio_path = os.path.join(AUDIO_FILES_DIR, filename)
         if not os.path.exists(audio_path):
             return jsonify({"error": f"File '{filename}' not found."}), 404
-
-        print(f"Selected audio file from server: {filename}")
 
         # Extract MFCC features
         audio_data, sr = librosa.load(audio_path, sr=None)
@@ -123,21 +146,15 @@ def predict_audio():
         probabilities = clf.predict_proba(mfcc_mean_df)
         prediction = clf.predict(mfcc_mean_df)[0]
 
-        print(f"Prediction probabilities: {probabilities}")
-        print(f"Prediction result: {prediction}")
-
         return jsonify({
             "filename": filename,
             "prediction": prediction,
             "probabilities": probabilities.tolist()
         })
     
-   
-
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({"error": str(e)}), 500
-    
 
 if __name__ == '__main__':
     print("Starting Flask app...")
