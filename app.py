@@ -24,19 +24,25 @@ os.makedirs(TTS_AUDIO_DIR, exist_ok=True)
 clf = None  # Global variable to hold the trained model
 
 # Load the trained model
+# Load the trained model
 def load_model():
     """Load the trained decision tree model."""
-    global clf
+    global clf  # Ensure we modify the global clf variable
     try:
+        print(f"Attempting to load model from: {MODEL_PATH}")
         if os.path.exists(MODEL_PATH):
+            # Attempt to load the model
             clf = joblib.load(MODEL_PATH)
-            print(f"Model loaded successfully from: {MODEL_PATH}")
+            print("Model loaded successfully.")
         else:
-            print(f"Model not found at: {MODEL_PATH}. Ensure the model file is deployed correctly.")
+            # If model file does not exist
+            print(f"Model file not found at {MODEL_PATH}. Ensure it is included in your deployment.")
             clf = None
     except Exception as e:
-        print(f"Error loading model: {e}")
+        # Catch any errors during model loading
+        print(f"Error during model loading: {e}")
         clf = None
+
 
 print(f"BASE_DIR: {BASE_DIR}")
 print(f"MODEL_PATH: {MODEL_PATH}")
