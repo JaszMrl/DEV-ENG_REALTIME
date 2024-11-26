@@ -32,7 +32,7 @@ def load_model():
             clf = joblib.load(MODEL_PATH)
             print(f"Model loaded successfully from: {MODEL_PATH}")
         else:
-            print(f"Model not found at: {MODEL_PATH}. Please train the model first.")
+            print(f"Model not found at: {MODEL_PATH}. Ensure the model file is deployed correctly.")
             clf = None
     except Exception as e:
         print(f"Error loading model: {e}")
@@ -150,6 +150,7 @@ def process_transcription():
 def predict_audio():
     """Predict the class of the selected audio file."""
     try:
+        # Check if the model is loaded
         if clf is None:
             return jsonify({"error": "Model is not loaded. Please check your deployment."}), 500
 
@@ -161,6 +162,7 @@ def predict_audio():
         if not filename:
             return jsonify({"error": "Filename not provided."}), 400
 
+        # Check if the audio file exists
         audio_path = os.path.join(AUDIO_FILES_DIR, filename)
         if not os.path.exists(audio_path):
             return jsonify({"error": f"File '{filename}' not found."}), 404
@@ -170,11 +172,11 @@ def predict_audio():
         mfcc_features = librosa.feature.mfcc(y=audio_data, sr=sr, n_mfcc=39)
         mfcc_mean = np.mean(mfcc_features.T, axis=0).reshape(1, -1)
 
-        # Match the model's feature names
+        # Create a DataFrame with the MFCC features
         column_names = [f'mfcc_{i+1}' for i in range(39)]
         mfcc_mean_df = pd.DataFrame(mfcc_mean, columns=column_names)
 
-        # Predict probabilities
+        # Predict using the loaded model
         probabilities = clf.predict_proba(mfcc_mean_df)
         prediction = clf.predict(mfcc_mean_df)[0]
 
@@ -183,9 +185,9 @@ def predict_audio():
             "prediction": prediction,
             "probabilities": probabilities.tolist()
         })
-    
+
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error in prediction: {e}")
         return jsonify({"error": str(e)}), 500
 
 
