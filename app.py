@@ -9,12 +9,15 @@ from google.cloud import texttospeech
 # Initialize Flask app
 app = Flask(__name__)
 
-# Paths for audio files and trained model
-AUDIO_FILES_DIR = 'Animal sound'  # Directory to store audio files
-MODEL_PATH = 'decision_tree_model.joblib'
-TTS_AUDIO_DIR = 'static\Generated_audio'  # Directory for generated TTS audio
+# Base directory of the project
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Ensure the audio directory exists
+# Paths for audio files and trained model
+AUDIO_FILES_DIR = os.path.join(BASE_DIR, 'Animal sound')  # Directory to store audio files
+MODEL_PATH = os.path.join(BASE_DIR, 'decision_tree_model.joblib')  # Path to the trained model
+TTS_AUDIO_DIR = os.path.join(BASE_DIR, 'static', 'Generated_audio')  # Directory for generated TTS audio
+
+# Ensure the directories exist
 os.makedirs(AUDIO_FILES_DIR, exist_ok=True)
 os.makedirs(TTS_AUDIO_DIR, exist_ok=True)
 
