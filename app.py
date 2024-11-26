@@ -38,6 +38,9 @@ def load_model():
         print(f"Error loading model: {e}")
         clf = None
 
+print(f"BASE_DIR: {BASE_DIR}")
+print(f"MODEL_PATH: {MODEL_PATH}")
+print(f"Does model file exist? {os.path.exists(MODEL_PATH)}")
 
 @app.route('/')
 def home():
