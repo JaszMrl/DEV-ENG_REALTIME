@@ -22,15 +22,20 @@ os.makedirs(AUDIO_FILES_DIR, exist_ok=True)
 os.makedirs(TTS_AUDIO_DIR, exist_ok=True)
 
 # Load the trained model
-clf = None
 def load_model():
     """Load the trained decision tree model."""
     global clf
-    if os.path.exists(MODEL_PATH):
-        clf = joblib.load(MODEL_PATH)
-        print(f"Model loaded successfully from: {MODEL_PATH}")
-    else:
-        print(f"Model not found at: {MODEL_PATH}. Please train the model first.")
+    try:
+        if os.path.exists(MODEL_PATH):
+            clf = joblib.load(MODEL_PATH)
+            print(f"Model loaded successfully from: {MODEL_PATH}")
+        else:
+            print(f"Model not found at: {MODEL_PATH}. Please train the model first.")
+            clf = None
+    except Exception as e:
+        print(f"Error loading model: {e}")
+        clf = None
+
 
 @app.route('/')
 def home():
@@ -73,7 +78,6 @@ def lesson3_learn():
 def lesson4():
     """Render the Lesson 4 page (Pronunciation)."""
     return render_template('lesson4.html')
-
 
 
 # New route to generate TTS audio
@@ -141,6 +145,9 @@ def process_transcription():
 def predict_audio():
     """Predict the class of the selected audio file."""
     try:
+        if clf is None:
+            return jsonify({"error": "Model is not loaded. Please check your deployment."}), 500
+
         if not request.is_json:
             return jsonify({"error": "Invalid content type. Expected 'application/json'."}), 415
 
@@ -175,6 +182,7 @@ def predict_audio():
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({"error": str(e)}), 500
+
 
 if __name__ == '__main__':
     print("Starting Flask app...")
