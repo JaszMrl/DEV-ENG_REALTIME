@@ -21,6 +21,8 @@ TTS_AUDIO_DIR = os.path.join(BASE_DIR, 'static', 'Generated_audio')  # Directory
 os.makedirs(AUDIO_FILES_DIR, exist_ok=True)
 os.makedirs(TTS_AUDIO_DIR, exist_ok=True)
 
+clf = None  # Global variable to hold the trained model
+
 # Load the trained model
 def load_model():
     """Load the trained decision tree model."""
