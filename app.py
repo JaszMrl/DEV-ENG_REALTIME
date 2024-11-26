@@ -152,34 +152,44 @@ def predict_audio():
     try:
         # Check if the model is loaded
         if clf is None:
+            print("Error: Model is not loaded.")
             return jsonify({"error": "Model is not loaded. Please check your deployment."}), 500
 
         if not request.is_json:
+            print("Error: Invalid content type. Expected JSON.")
             return jsonify({"error": "Invalid content type. Expected 'application/json'."}), 415
 
         data = request.get_json()
         filename = data.get('filename')
         if not filename:
+            print("Error: Filename not provided.")
             return jsonify({"error": "Filename not provided."}), 400
 
         # Check if the audio file exists
         audio_path = os.path.join(AUDIO_FILES_DIR, filename)
         if not os.path.exists(audio_path):
+            print(f"Error: File '{filename}' not found in {AUDIO_FILES_DIR}.")
             return jsonify({"error": f"File '{filename}' not found."}), 404
+
+        print(f"Audio file path: {audio_path}")
 
         # Extract MFCC features
         audio_data, sr = librosa.load(audio_path, sr=None)
+        print(f"Audio loaded successfully. Sample rate: {sr}, Audio data shape: {audio_data.shape}")
         mfcc_features = librosa.feature.mfcc(y=audio_data, sr=sr, n_mfcc=39)
+        print(f"MFCC features shape: {mfcc_features.shape}")
         mfcc_mean = np.mean(mfcc_features.T, axis=0).reshape(1, -1)
 
         # Create a DataFrame with the MFCC features
         column_names = [f'mfcc_{i+1}' for i in range(39)]
         mfcc_mean_df = pd.DataFrame(mfcc_mean, columns=column_names)
+        print(f"MFCC DataFrame: {mfcc_mean_df}")
 
         # Predict using the loaded model
         probabilities = clf.predict_proba(mfcc_mean_df)
         prediction = clf.predict(mfcc_mean_df)[0]
 
+        print(f"Prediction: {prediction}, Probabilities: {probabilities}")
         return jsonify({
             "filename": filename,
             "prediction": prediction,
@@ -187,9 +197,8 @@ def predict_audio():
         })
 
     except Exception as e:
-        print(f"Error in prediction: {e}")
+        print(f"Error in prediction route: {e}")
         return jsonify({"error": str(e)}), 500
-
 
 if __name__ == '__main__':
     print("Starting Flask app...")
