@@ -192,7 +192,7 @@
             </ul>
         </nav>
     </aside>
-    <!-- Main Content -->
+
     <div class="main-content">
         <header>
             <h1>Easy Mode</h1>
@@ -200,143 +200,199 @@
         <section>
             <h2>Practice Sentence</h2>
             <div id="sentence-container">
-                <p id="random-sentence">Click the button to get a random sentence!</p>
+                <!-- Display one sentence at a time -->
+                <p id="random-sentence">Click the button to shuffle and start practicing!</p>
             </div>
-            <button id="new-sentence-btn" onclick="generateRandomSentence()">🎲 New Sentence</button>
+            <button id="shuffle-sentences-btn" onclick="startShuffledPractice()">🔀 Shuffle Sentences</button>
+            <button id="next-sentence-btn" onclick="nextSentence()" disabled>➡️ Next Sentence</button>
             
             <h3>Pronunciation Score</h3>
             <p id="accuracy-output">Your score will appear here...</p>
-            <button id="start-speech-btn" onclick="startSpeechRecognition()">🎙️ Start Speaking</button>
+            <button id="start-speech-btn" onclick="startSpeechRecognition()" disabled>🎙️ Start Speaking</button>
             <button id="stop-speech-btn" onclick="stopSpeechRecognition()" disabled>🛑 Stop</button>
         </section>
         <footer>
             <a href="{{ url_for('home') }}" class="back-to-home-button">Back to Home</a>
         </footer>
     </div>
-</div>
-</body>
-
-
 <script>
 
-let sentences = {};
-let targetSentence = "";
+document.addEventListener("DOMContentLoaded", () => {
+    let sentences = {};
+    let shuffledSentences = [];
+    let currentIndex = 0;
+    let recognition = null;
 
-// Fetch the JSON
-fetch('/static/sentences.json')
-    .then(response => response.json())
-    .then(data => {
-        sentences = data;
-        console.log("Loaded sentences:", sentences);
-    })
-    .catch(error => console.error("Error loading sentences:", error));
-
-// Generate Random Sentence
-function generateRandomSentence() {
-    const difficulty = 'easy'; // Adjust as needed
-    if (sentences[difficulty] && sentences[difficulty].length > 0) {
-        const randomIndex = Math.floor(Math.random() * sentences[difficulty].length);
-        targetSentence = sentences[difficulty][randomIndex];
-        document.getElementById('random-sentence').innerText = targetSentence;
+    // Initialize speech recognition if supported
+    function initializeSpeechRecognition() {
+        if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
+            alert('Speech Recognition is not supported in this browser. Please use Google Chrome.');
+            return null;
+        }
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognitionInstance = new SpeechRecognition();
+        recognitionInstance.lang = 'en-US';
+        recognitionInstance.continuous = false; // Single speech input per session
+        return recognitionInstance;
     }
-}
 
-// Start Speech Recognition
-function startSpeechRecognition() {
-    const output = document.getElementById('accuracy-output');
-    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    recognition.lang = 'en-US';
+    recognition = initializeSpeechRecognition();
 
-    recognition.onstart = () => {
-        output.innerText = 'Listening... Speak into the microphone.';
-    };
+    // Load sentences JSON
+    function loadSentences() {
+        fetch('/static/sentences.json')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Failed to load sentences: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                sentences = data;
+                console.log("Sentences loaded successfully:", sentences);
+            })
+            .catch(error => {
+                console.error("Error loading sentences:", error);
+                alert("Unable to load practice sentences. Please try again later.");
+            });
+    }
+    // Shuffle sentences and start practice
+    function startShuffledPractice(difficulty = 'easy') {
+        if (!Object.keys(sentences).length) {
+            alert('Sentences are still loading. Please wait a moment.');
+            return;
+        }
 
-    recognition.onresult = (event) => {
-        const userSpeech = event.results[0][0].transcript;
-        const feedback = calculateDetailedFeedback(targetSentence, userSpeech);
-        const accuracy = calculatePronunciationAccuracy(targetSentence, userSpeech);
+        if (sentences[difficulty] && sentences[difficulty].length > 0) {
+            shuffledSentences = [...sentences[difficulty]].sort(() => Math.random() - 0.5); // Shuffle the array
+            currentIndex = 0; // Reset to the first sentence
+            displayCurrentSentence();
 
-        // Display word-by-word feedback and accuracy score
-        output.innerHTML = `
+            // Enable buttons for practice
+            document.getElementById('next-sentence-btn').disabled = false;
+            document.getElementById('start-speech-btn').disabled = false;
+        } else {
+            alert(`No sentences available for ${difficulty} difficulty.`);
+        }
+    }
+
+    // Display the current sentence
+    function displayCurrentSentence() {
+        if (shuffledSentences.length > 0 && currentIndex < shuffledSentences.length) {
+            const currentSentence = shuffledSentences[currentIndex];
+            document.getElementById('random-sentence').innerText = currentSentence;
+        } else {
+            alert("You've completed all the sentences!");
+            document.getElementById('next-sentence-btn').disabled = true;
+            document.getElementById('start-speech-btn').disabled = true;
+        }
+    }
+    // Move to the next sentence
+    function nextSentence() {
+        if (currentIndex < shuffledSentences.length - 1) {
+            currentIndex++;
+            displayCurrentSentence();
+        } else {
+            alert("You've reached the end of the shuffled sentences.");
+            document.getElementById('next-sentence-btn').disabled = true;
+        }
+    }
+    // Analyze pronunciation using the backend endpoint
+    async function analyzePronunciation(targetSentence, userSpeech) {
+    try {
+        const response = await fetch('/analyze', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ target_sentence: targetSentence, user_speech: userSpeech }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to analyze pronunciation: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+
+        let feedbackHTML = result.feedback.map((item, index) => `
+                <tr>
+                <td>${result.target_phonemes[index] || '-'}</td>
+                <td>${result.user_phonemes[index] || '-'}</td>
+                <td class="${item.match ? 'match' : 'mismatch'}">${item.match ? '✅' : '❌'}</td>
+                <td>${item.correction || 'Good job!'}</td>
+            </tr>
+        `).join('');
+
+        document.getElementById('accuracy-output').innerHTML = `
             <p>Target Sentence: "${targetSentence}"</p>
             <p>Your Speech: "${userSpeech}"</p>
-            <p>Correct Words: ${feedback.correct.join(' ')}</p>
-            <p>Incorrect Words: ${feedback.incorrect.join(' ')}</p>
-            <p>Pronunciation Accuracy: ${accuracy}%</p>
+            <p>Pronunciation Accuracy: ${result.accuracy.toFixed(2)}%</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Target Phoneme</th>
+                        <th>Your Phoneme</th>
+                        <th>Match</th>
+                        <th>Correction</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${feedbackHTML}
+                </tbody>
+            </table>
         `;
-    };
-
-    recognition.onerror = (event) => {
-        if (event.error === 'no-speech') {
-            output.innerText = 'No speech detected. Please try again.';
-        } else {
-            output.innerText = `Error: ${event.error}`;
-        }
-    };
-
-    recognition.start();
-}
-
-// Calculate Pronunciation Accuracy (Text-Based)
-function calculatePronunciationAccuracy(target, speech) {
-    const normalizedTarget = target.trim().toLowerCase().replace(/[^\w\s]/g, '');
-    const normalizedSpeech = speech.trim().toLowerCase().replace(/[^\w\s]/g, '');
-    const levenshteinDistance = (a, b) => {
-        const matrix = Array.from({ length: a.length + 1 }, (_, i) =>
-            Array.from({ length: b.length + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
-        );
-        for (let i = 1; i <= a.length; i++) {
-            for (let j = 1; j <= b.length; j++) {
-                matrix[i][j] =
-                    a[i - 1] === b[j - 1]
-                        ? matrix[i - 1][j - 1]
-                        : Math.min(matrix[i - 1][j - 1], matrix[i][j - 1], matrix[i - 1][j]) + 1;
-            }
-        }
-        return matrix[a.length][b.length];
-    };
-
-    const distance = levenshteinDistance(normalizedTarget, normalizedSpeech);
-    const maxLength = Math.max(normalizedTarget.length, normalizedSpeech.length);
-    return Math.max(0, Math.floor(((maxLength - distance) / maxLength) * 100)); // Percentage
-}
-
-// Calculate Word-by-Word Feedback
-function calculateDetailedFeedback(target, speech) {
-    const targetWords = target.trim().toLowerCase().split(' ');
-    const speechWords = speech.trim().toLowerCase().split(' ');
-    const feedback = { correct: [], incorrect: [] };
-
-    targetWords.forEach((word, index) => {
-        if (speechWords[index] === word) {
-            feedback.correct.push(word);
-        } else {
-            feedback.incorrect.push(word || '_');
-        }
-    });
-
-    return feedback;
-}
-
-// OPTIONAL: Highlight Word-by-Word Feedback
-function highlightFeedback(target, speech) {
-    const targetWords = target.trim().toLowerCase().split(' ');
-    const speechWords = speech.trim().toLowerCase().split(' ');
-
-    return targetWords
-        .map((word, index) =>
-            speechWords[index] === word
-                ? `<span style="color: green">${word}</span>`
-                : `<span style="color: red">${word}</span>`
-        )
-        .join(' ');
-}
-
-
-    function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    sidebar.style.display = sidebar.style.display === 'block' ? 'none' : 'block';
+    } catch (error) {
+        console.error("Error analyzing pronunciation:", error);
+        alert("Unable to analyze pronunciation. Please try again.");
     }
+}
+    // Start speech recognition
+    function startSpeechRecognition() {
+        if (!recognition) {
+            alert('Speech Recognition is not initialized.');
+            return;
+        }
+        if (shuffledSentences.length === 0 || currentIndex >= shuffledSentences.length) {
+            alert('No sentence available to practice. Please shuffle first.');
+            return;
+        }
+
+        const targetSentence = shuffledSentences[currentIndex];
+        const output = document.getElementById('accuracy-output');
+
+        recognition.onstart = () => {
+            output.innerText = 'Listening... Speak into the microphone.';
+            document.getElementById('stop-speech-btn').disabled = false;
+        };
+
+        recognition.onresult = event => {
+            const userSpeech = event.results[0][0].transcript;
+            analyzePronunciation(targetSentence, userSpeech);
+        };
+
+        recognition.onerror = event => {
+            output.innerText = `Error: ${event.error}`;
+        };
+
+        recognition.onend = () => {
+            document.getElementById('stop-speech-btn').disabled = true;
+        };
+
+        recognition.start();
+    }
+
+    // Stop speech recognition
+    function stopSpeechRecognition() {
+        if (recognition) {
+            recognition.stop();
+        }
+    }
+    // Attach event listeners to buttons
+    document.getElementById('shuffle-sentences-btn').addEventListener('click', () => startShuffledPractice());
+    document.getElementById('next-sentence-btn').addEventListener('click', nextSentence);
+    document.getElementById('start-speech-btn').addEventListener('click', startSpeechRecognition);
+    document.getElementById('stop-speech-btn').addEventListener('click', stopSpeechRecognition);
+    // Load sentences on page load
+    loadSentences();
+});
     </script>
 </body>
 

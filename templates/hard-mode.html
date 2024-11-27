@@ -195,13 +195,17 @@
     <!-- Main Content -->
     <div class="main-content">
         <header>
-            <h1>Hard Mode</h1>
+            <h1>Medium Mode</h1>
         </header>
         <section>
-            <p>Speak into your microphone, and your speech will be transcribed into text:</p>
-            <div id="transcription-container">
-                <p id="transcription-output">Your transcribed text will appear here...</p>
+            <h2>Practice Sentence</h2>
+            <div id="sentence-container">
+                <p id="random-sentence">Click the button to get a random sentence!</p>
             </div>
+            <button id="new-sentence-btn" onclick="generateRandomSentence()">🎲 New Sentence</button>
+            
+            <h3>Pronunciation Score</h3>
+            <p id="accuracy-output">Your score will appear here...</p>
             <button id="start-speech-btn" onclick="startSpeechRecognition()">🎙️ Start Speaking</button>
             <button id="stop-speech-btn" onclick="stopSpeechRecognition()" disabled>🛑 Stop</button>
         </section>

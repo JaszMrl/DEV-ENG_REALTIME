@@ -1,18 +1,37 @@
 {
-    "easy": [
-      "The sun is bright.",
-      "I love apples.",
-      "He is a boy."
-    ],
-    "medium": [
-      "The weather is beautiful today.",
-      "She enjoys reading books on weekends.",
-      "We went to the park and played soccer."
-    ],
-    "hard": [
-      "The complexity of this problem is overwhelming.",
-      "He swiftly navigated through the labyrinth.",
-      "They eagerly anticipated the announcement of the results."
-    ]
-  }
-  
+  "easy": [
+    "The sun is bright.",
+    "I love apples.",
+    "The dog is barking.",
+    "She is my friend.",
+    "We are going to the park.",
+    "He eats pizza every day.",
+    "The flowers are blooming.",
+    "The car is red.",
+    "They play soccer every Saturday."
+  ],
+  "medium": [
+    "The weather is beautiful today.",
+    "She enjoys reading books on weekends.",
+    "We went to the park and played soccer.",
+    "He is learning how to bake a cake.",
+    "The train arrived at the station on time.",
+    "My favorite subject is science because it is interesting.",
+    "They are planning a trip to the mountains next summer.",
+    "She likes to draw pictures of animals and landscapes.",
+    "The restaurant serves delicious food every evening.",
+    "He writes in his journal to keep track of his thoughts."
+  ],
+  "hard": [
+    "The complexity of this problem is overwhelming.",
+    "He swiftly navigated through the labyrinth.",
+    "They eagerly anticipated the announcement of the results.",
+    "Her eloquent speech captivated the audience completely.",
+    "The intricate details of the sculpture were astonishing.",
+    "He meticulously planned every aspect of the event.",
+    "The symphony orchestra played an awe-inspiring performance.",
+    "They debated the ethical implications of the research findings.",
+    "She skillfully translated the ancient text into modern English.",
+    "The mysterious artifact baffled the team of archaeologists."
+  ]
+}
