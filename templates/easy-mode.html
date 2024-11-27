@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Easy Mode Page</title>
+    <link rel="stylesheet" href="/static/easy.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #ffffff;
+            color: #000000;
+            font-size: 16px;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            overflow-y: scroll;
+            height: 100%;
+        }
+        
+        html {
+            height: 100%;
+        }
+        
+        .afs {
+            padding: 30px;
+            margin-bottom: 10px;
+            font-size: 25px;
+        }
+        
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            height: 100%;
+        }
+        
+        @media (min-width: 768px) {
+            .app-container {
+                flex-direction: row;
+            }
+        }
+        
+        .sidebar {
+            background-color: #333333;
+            color: #ffffff;
+            padding: 15px;
+            display: none;
+            height: 100%;
+            overflow-y: auto;
+        }
+        
+        .bottom-predict {
+            padding: 25px;
+            font-size: 20px;
+        }
+        
+        .sidebar a {
+            color: #ffffff;
+            text-decoration: none;
+            display: block;
+            padding: 10px 0;
+        }
+        
+        .sidebar a:hover {
+            text-decoration: underline;
+        }
+        
+        .menu-button {
+            background-color: #333;
+            color: #fff;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+            display: block;
+        }
+        
+        @media (min-width: 768px) {
+            .sidebar {
+                display: block;
+                width: 200px;
+            }
+            .menu-button {
+                display: none;
+            }
+        }
+        
+        .settings-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        label {
+            display: block;
+            margin-top: 15px;
+            color: inherit;
+        }
+        
+        input[type="text"],
+        input[type="email"],
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            color: #000;
+            background-color: #fff;
+        }
+        
+        button.save-settings {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        button.save-settings:hover {
+            background-color: #45a049;
+        }
+        
+        #user-page p {
+            color: inherit;
+        }
+        
+        .lesson-section {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+        
+        @media (min-width: 768px) {
+            .lesson-section {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .lesson-section {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        
+        button,
+        .sidebar a {
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+        
+        @media (max-width: 600px) {
+            button,
+            .sidebar a {
+                padding: 8px 16px;
+                font-size: 14px;
+            }
+            body {
+                font-size: 14px;
+            }
+            .settings-container {
+                padding: 10px;
+            }
+        }
+        
+        .main-content {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+    </style>
+   
+</head>
+<body>
+<div class="app-container">
+    <!-- Menu Button for Mobile -->
+    <button class="menu-button" onclick="toggleSidebar()">☰ Menu</button>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <nav>
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/user">User</a></li>
+                <li><a href="/settings">Settings</a></li>
+            </ul>
+        </nav>
+    </aside>
+    <!-- Main Content -->
+    <div class="main-content">
+        <header>
+            <h1>Easy Mode</h1>
+        </header>
+        <section>
+            <h2>Practice Sentence</h2>
+            <div id="sentence-container">
+                <p id="random-sentence">Click the button to get a random sentence!</p>
+            </div>
+            <button id="new-sentence-btn" onclick="generateRandomSentence()">🎲 New Sentence</button>
+            
+            <h3>Pronunciation Score</h3>
+            <p id="accuracy-output">Your score will appear here...</p>
+            <button id="start-speech-btn" onclick="startSpeechRecognition()">🎙️ Start Speaking</button>
+            <button id="stop-speech-btn" onclick="stopSpeechRecognition()" disabled>🛑 Stop</button>
+        </section>
+        <footer>
+            <a href="{{ url_for('home') }}" class="back-to-home-button">Back to Home</a>
+        </footer>
+    </div>
+</div>
+</body>
+
+
+<script>
+
+let sentences = {};
+let targetSentence = "";
+
+// Fetch the JSON
+fetch('/static/sentences.json')
+    .then(response => response.json())
+    .then(data => {
+        sentences = data;
+        console.log("Loaded sentences:", sentences);
+    })
+    .catch(error => console.error("Error loading sentences:", error));
+
+// Generate Random Sentence
+function generateRandomSentence() {
+    const difficulty = 'easy'; // Adjust as needed
+    if (sentences[difficulty] && sentences[difficulty].length > 0) {
+        const randomIndex = Math.floor(Math.random() * sentences[difficulty].length);
+        targetSentence = sentences[difficulty][randomIndex];
+        document.getElementById('random-sentence').innerText = targetSentence;
+    }
+}
+
+// Start Speech Recognition
+function startSpeechRecognition() {
+    const output = document.getElementById('accuracy-output');
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+        output.innerText = 'Listening... Speak into the microphone.';
+    };
+
+    recognition.onresult = (event) => {
+        const userSpeech = event.results[0][0].transcript;
+        const feedback = calculateDetailedFeedback(targetSentence, userSpeech);
+        const accuracy = calculatePronunciationAccuracy(targetSentence, userSpeech);
+
+        // Display word-by-word feedback and accuracy score
+        output.innerHTML = `
+            <p>Target Sentence: "${targetSentence}"</p>
+            <p>Your Speech: "${userSpeech}"</p>
+            <p>Correct Words: ${feedback.correct.join(' ')}</p>
+            <p>Incorrect Words: ${feedback.incorrect.join(' ')}</p>
+            <p>Pronunciation Accuracy: ${accuracy}%</p>
+        `;
+    };
+
+    recognition.onerror = (event) => {
+        if (event.error === 'no-speech') {
+            output.innerText = 'No speech detected. Please try again.';
+        } else {
+            output.innerText = `Error: ${event.error}`;
+        }
+    };
+
+    recognition.start();
+}
+
+// Calculate Pronunciation Accuracy (Text-Based)
+function calculatePronunciationAccuracy(target, speech) {
+    const normalizedTarget = target.trim().toLowerCase().replace(/[^\w\s]/g, '');
+    const normalizedSpeech = speech.trim().toLowerCase().replace(/[^\w\s]/g, '');
+    const levenshteinDistance = (a, b) => {
+        const matrix = Array.from({ length: a.length + 1 }, (_, i) =>
+            Array.from({ length: b.length + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
+        );
+        for (let i = 1; i <= a.length; i++) {
+            for (let j = 1; j <= b.length; j++) {
+                matrix[i][j] =
+                    a[i - 1] === b[j - 1]
+                        ? matrix[i - 1][j - 1]
+                        : Math.min(matrix[i - 1][j - 1], matrix[i][j - 1], matrix[i - 1][j]) + 1;
+            }
+        }
+        return matrix[a.length][b.length];
+    };
+
+    const distance = levenshteinDistance(normalizedTarget, normalizedSpeech);
+    const maxLength = Math.max(normalizedTarget.length, normalizedSpeech.length);
+    return Math.max(0, Math.floor(((maxLength - distance) / maxLength) * 100)); // Percentage
+}
+
+// Calculate Word-by-Word Feedback
+function calculateDetailedFeedback(target, speech) {
+    const targetWords = target.trim().toLowerCase().split(' ');
+    const speechWords = speech.trim().toLowerCase().split(' ');
+    const feedback = { correct: [], incorrect: [] };
+
+    targetWords.forEach((word, index) => {
+        if (speechWords[index] === word) {
+            feedback.correct.push(word);
+        } else {
+            feedback.incorrect.push(word || '_');
+        }
+    });
+
+    return feedback;
+}
+
+// OPTIONAL: Highlight Word-by-Word Feedback
+function highlightFeedback(target, speech) {
+    const targetWords = target.trim().toLowerCase().split(' ');
+    const speechWords = speech.trim().toLowerCase().split(' ');
+
+    return targetWords
+        .map((word, index) =>
+            speechWords[index] === word
+                ? `<span style="color: green">${word}</span>`
+                : `<span style="color: red">${word}</span>`
+        )
+        .join(' ');
+}
+
+
+    function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.style.display = sidebar.style.display === 'block' ? 'none' : 'block';
+    }
+    </script>
+</body>
+
+</html>

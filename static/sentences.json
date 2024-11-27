@@ -1,0 +1,18 @@
+{
+    "easy": [
+      "The sun is bright.",
+      "I love apples.",
+      "He is a boy."
+    ],
+    "medium": [
+      "The weather is beautiful today.",
+      "She enjoys reading books on weekends.",
+      "We went to the park and played soccer."
+    ],
+    "hard": [
+      "The complexity of this problem is overwhelming.",
+      "He swiftly navigated through the labyrinth.",
+      "They eagerly anticipated the announcement of the results."
+    ]
+  }
+  
