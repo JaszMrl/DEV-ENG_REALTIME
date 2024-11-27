@@ -30,26 +30,49 @@ def analyze_pronunciation():
         target_sentence = preprocess_sentence(target_sentence)
         user_speech = preprocess_sentence(user_speech)
 
-        target_phonemes = [get_accent_phonemes(word, accent) for word in target_sentence.split()]
-        user_phonemes = [get_accent_phonemes(word, accent) for word in user_speech.split()]
+        # Map words to phonemes
+        def words_to_phoneme_mapping(sentence, accent):
+            word_to_phoneme = {}
+            for word in sentence.split():
+                phoneme = get_accent_phonemes(word, accent)
+                word_to_phoneme[word] = phoneme
+            return word_to_phoneme
 
-        # Align phonemes for comparison
+        # Generate phoneme mappings for target and user speech
+        target_mapping = words_to_phoneme_mapping(target_sentence, accent)
+        user_mapping = words_to_phoneme_mapping(user_speech, accent)
+
+        # Align phonemes and their corresponding words
+        target_words = list(target_mapping.keys())
+        user_words = list(user_mapping.keys())
+
+        target_phonemes = list(target_mapping.values())
+        user_phonemes = list(user_mapping.values())
+
         max_length = max(len(target_phonemes), len(user_phonemes))
         target_phonemes.extend([""] * (max_length - len(target_phonemes)))
         user_phonemes.extend([""] * (max_length - len(user_phonemes)))
 
+        target_words.extend([""] * (max_length - len(target_words)))
+        user_words.extend([""] * (max_length - len(user_words)))
+
         # Compare phonemes
-        def compare_phonemes_with_correction(target, user):
+        def compare_phonemes_with_correction(target, user, target_word):
             if not target or not user:
                 return {"match": False, "correction": "No input detected."}
             similarity = ratio(target, user)
-            match = similarity > 0.7  # Slightly reduce threshold for accent variations
-            correction = f"Try pronouncing '{target}' more clearly." if not match else ""
+            match = similarity > 0.999  # Adjust threshold as needed
+            correction = (
+                f"Try pronouncing the word '{target_word}' more clearly."
+                if not match
+                else "Good job!"
+            )
             return {"match": match, "correction": correction, "similarity": similarity}
 
+        # Generate feedback
         feedback = [
-            compare_phonemes_with_correction(t, u)
-            for t, u in zip(target_phonemes, user_phonemes)
+            compare_phonemes_with_correction(t, u, w)
+            for t, u, w in zip(target_phonemes, user_phonemes, target_words)
         ]
 
         # Calculate weighted accuracy
@@ -59,7 +82,7 @@ def analyze_pronunciation():
             "target_phonemes": target_phonemes,
             "user_phonemes": user_phonemes,
             "accuracy": accuracy,
-            "feedback": feedback
+            "feedback": feedback,
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
