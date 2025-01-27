@@ -108,5 +108,9 @@ def medium():
 def hard():
     return render_template('hard-mode.html')
 
+@app.route('/difficulty')
+def difficulty():
+    return render_template('index.html')
+
 if __name__ == '__main__':
     app.run(debug=True)
