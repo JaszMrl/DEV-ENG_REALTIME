@@ -261,7 +261,7 @@
                     </div>
                 </section>
                 <footer>
-                    <button class="speech-btn" id="speech-btn" onclick="showPage('difficulty')">Speech</button>
+                    <button class="speech-btn" id="speech-btn" onclick="goToTestPage()">Speech</button>
                 </footer>
             </div>
 
@@ -335,6 +335,12 @@
 
         <!-- JavaScript to handle page navigation and predictions -->
         <script>
+
+            function goToTestPage() {
+                window.location.href = "/test"; // Redirects to test.html
+            }
+
+
             function showPage(pageId) {
                 const pages = document.querySelectorAll('.page');
                 pages.forEach(page => page.classList.remove('active'));

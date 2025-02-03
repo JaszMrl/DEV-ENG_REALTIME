@@ -393,6 +393,56 @@ document.addEventListener("DOMContentLoaded", () => {
     // Load sentences on page load
     loadSentences();
 });
+
+async function analyzePronunciation(targetSentence, userSpeech) {
+    try {
+        const response = await fetch('/analyze', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ target_sentence: targetSentence, user_speech: userSpeech }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to analyze pronunciation: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        console.log("Analysis result:", result);  // Debugging line to check response
+
+        let feedbackHTML = result.feedback.map((item, index) => `
+                <tr>
+                <td>${result.target_phonemes[index] || '-'}</td>
+                <td>${result.user_phonemes[index] || '-'}</td>
+                <td class="${item.match ? 'match' : 'mismatch'}">${item.match ? '✅' : '❌'}</td>
+                <td>${item.correction || 'Good job!'}</td>
+            </tr>
+        `).join('');
+
+        // ✅ Ensure Accuracy is Updated in the UI
+        document.getElementById('accuracy-output').innerHTML = `
+            <p><strong>Target Sentence:</strong> "${targetSentence}"</p>
+            <p><strong>Your Speech:</strong> "${userSpeech}"</p>
+            <p><strong>Pronunciation Accuracy:</strong> ${result.accuracy.toFixed(2)}%</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Target Phoneme</th>
+                        <th>Your Phoneme</th>
+                        <th>Match</th>
+                        <th>Correction</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${feedbackHTML}
+                </tbody>
+            </table>
+        `;
+    } catch (error) {
+        console.error("Error analyzing pronunciation:", error);
+        alert("Unable to analyze pronunciation. Please try again.");
+    }
+}
+
     </script>
 </body>
 

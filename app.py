@@ -1,9 +1,28 @@
 from flask import Flask, request, jsonify, render_template
 from accent_phoneme_dict import ACCENT_PHONEME_DICT  # Import the dictionary
 import pronouncing
+import os
+import json
 from Levenshtein import ratio
 
 app = Flask(__name__)
+@app.route('/get-test-sentences', methods=['GET'])
+def get_test_sentences():
+    try:
+        json_path = os.path.join(os.getcwd(), "static", "sentences.json")  # Ensure correct absolute path
+        if not os.path.exists(json_path):
+            return jsonify({"error": "sentences.json file not found!"}), 404
+        
+        with open(json_path, "r", encoding="utf-8") as file:
+            data = json.load(file)
+
+        print("✅ Loaded Sentences JSON:", data)  # Debugging Output
+        return jsonify(data)
+    except Exception as e:
+        print(f"❌ Error loading JSON: {e}")
+        return jsonify({"error": str(e)})
+
+
 
 def get_accent_phonemes(word, accent="en-US"):
     # Use accent-specific dictionary if available
@@ -16,13 +35,11 @@ def get_accent_phonemes(word, accent="en-US"):
 @app.route('/analyze', methods=['POST'])
 def analyze_pronunciation():
     try:
-        # Parse request data
         data = request.json
         target_sentence = data.get('target_sentence', '').lower()
         user_speech = data.get('user_speech', '').lower()
-        accent = data.get('accent', 'en-US')  # Accent specified in the request
 
-        # Preprocess and convert to phonemes
+        # Preprocess and clean sentences
         def preprocess_sentence(sentence):
             import re
             return re.sub(r'[^\w\s]', '', sentence).strip()
@@ -30,62 +47,35 @@ def analyze_pronunciation():
         target_sentence = preprocess_sentence(target_sentence)
         user_speech = preprocess_sentence(user_speech)
 
-        # Map words to phonemes
-        def words_to_phoneme_mapping(sentence, accent):
-            word_to_phoneme = {}
+        # Convert to phonemes
+        def sentence_to_phonemes(sentence):
+            phonemes = []
             for word in sentence.split():
-                phoneme = get_accent_phonemes(word, accent)
-                word_to_phoneme[word] = phoneme
-            return word_to_phoneme
+                word_phonemes = pronouncing.phones_for_word(word)
+                phonemes.append(word_phonemes[0] if word_phonemes else "")
+            return phonemes
 
-        # Generate phoneme mappings for target and user speech
-        target_mapping = words_to_phoneme_mapping(target_sentence, accent)
-        user_mapping = words_to_phoneme_mapping(user_speech, accent)
+        target_phonemes = sentence_to_phonemes(target_sentence)
+        user_phonemes = sentence_to_phonemes(user_speech)
 
-        # Align phonemes and their corresponding words
-        target_words = list(target_mapping.keys())
-        user_words = list(user_mapping.keys())
+        # Compare phonemes and calculate accuracy
+        correct = sum(1 for t, u in zip(target_phonemes, user_phonemes) if t == u)
+        total = len(target_phonemes)
+        accuracy = (correct / total) * 100 if total > 0 else 0
 
-        target_phonemes = list(target_mapping.values())
-        user_phonemes = list(user_mapping.values())
-
-        max_length = max(len(target_phonemes), len(user_phonemes))
-        target_phonemes.extend([""] * (max_length - len(target_phonemes)))
-        user_phonemes.extend([""] * (max_length - len(user_phonemes)))
-
-        target_words.extend([""] * (max_length - len(target_words)))
-        user_words.extend([""] * (max_length - len(user_words)))
-
-        # Compare phonemes
-        def compare_phonemes_with_correction(target, user, target_word):
-            if not target or not user:
-                return {"match": False, "correction": "No input detected."}
-            similarity = ratio(target, user)
-            match = similarity > 0.999  # Adjust threshold as needed
-            correction = (
-                f"Try pronouncing the word '{target_word}' more clearly."
-                if not match
-                else "Good job!"
-            )
-            return {"match": match, "correction": correction, "similarity": similarity}
-
-        # Generate feedback
-        feedback = [
-            compare_phonemes_with_correction(t, u, w)
-            for t, u, w in zip(target_phonemes, user_phonemes, target_words)
-        ]
-
-        # Calculate weighted accuracy
-        accuracy = sum(1 for f in feedback if f["match"]) / len(feedback) * 100 if feedback else 0
+        # Debugging Output
+        print(f"Target: {target_sentence} -> {target_phonemes}")
+        print(f"User: {user_speech} -> {user_phonemes}")
+        print(f"Accuracy: {accuracy:.2f}%")
 
         return jsonify({
             "target_phonemes": target_phonemes,
             "user_phonemes": user_phonemes,
-            "accuracy": accuracy,
-            "feedback": feedback,
+            "accuracy": accuracy
         })
+
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e)})
 
 
 # Home Page
@@ -111,6 +101,11 @@ def hard():
 @app.route('/difficulty')
 def difficulty():
     return render_template('index.html')
+
+@app.route('/test')
+def speech_test():
+    return render_template('test.html')
+
 
 if __name__ == '__main__':
     app.run(debug=True)
