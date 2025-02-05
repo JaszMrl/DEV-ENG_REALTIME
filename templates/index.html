@@ -8,377 +8,179 @@
     <link rel="stylesheet" href="/static/styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* Basic styles */
         body {
-            background-color: #ffffff;
-            color: #000000;
-            font-size: 16px;
+            font-family: 'Poppins', sans-serif;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-            overflow-y: scroll;
-            height: 100%;
         }
-        
-        html {
-            height: 100%;
-        }
-        
-        .afs {
-            padding: 30px;
-            margin-bottom: 10px;
-            font-size: 25px;
-        }
-        
+
         .app-container {
             display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            height: 100%;
+            flex-direction: row;
+            height: 100vh;
+            overflow: hidden;
         }
-        
-        @media (min-width: 768px) {
-            .app-container {
-                flex-direction: row;
-            }
-        }
-        
+
         .sidebar {
-            background-color: #333333;
-            color: #ffffff;
-            padding: 15px;
-            display: none;
-            height: 100%;
-            overflow-y: auto;
-        }
-        
-        .bottom-predict {
-            padding: 25px;
-            font-size: 20px;
-        }
-        
-        .sidebar a {
-            color: #ffffff;
-            text-decoration: none;
-            display: block;
-            padding: 10px 0;
-        }
-        
-        .sidebar a:hover {
-            text-decoration: underline;
-        }
-        
-        .menu-button {
             background-color: #333;
-            color: #fff;
-            padding: 10px;
-            border: none;
-            cursor: pointer;
-            display: block;
-        }
-        
-        @media (min-width: 768px) {
-            .sidebar {
-                display: block;
-                width: 200px;
-            }
-            .menu-button {
-                display: none;
-            }
-        }
-        
-        .settings-container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f9f9f9;
-            border-radius: 10px;
-            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        
-        label {
-            display: block;
-            margin-top: 15px;
-            color: inherit;
-        }
-        
-        input[type="text"],
-        input[type="email"],
-        select {
-            width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            color: #000;
-            background-color: #fff;
-        }
-        
-        button.save-settings {
-            margin-top: 20px;
-            padding: 10px 20px;
-            background-color: #4CAF50;
             color: white;
-            border: none;
+            width: 250px;
+            height: 100%;
+            padding: 20px;
+            position: fixed;
+        }
+
+        .sidebar nav ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar nav ul li {
+            margin-bottom: 20px;
+        }
+
+        .sidebar nav ul li a {
+            text-decoration: none;
+            color: white;
+            font-size: 1rem;
+            padding: 10px 15px;
+            display: block;
             border-radius: 5px;
-            cursor: pointer;
+            transition: background-color 0.3s;
         }
-        
-        button.save-settings:hover {
-            background-color: #45a049;
+
+        .sidebar nav ul li a:hover {
+            background-color: #3B82F6;
         }
-        
-        #user-page p {
-            color: inherit;
-        }
-        
-        .lesson-section {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 10px;
-        }
-        
-        @media (min-width: 768px) {
-            .lesson-section {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-        
-        @media (min-width: 1024px) {
-            .lesson-section {
-                grid-template-columns: repeat(4, 1fr);
-            }
-        }
-        
-        button,
-        .sidebar a {
-            padding: 10px 20px;
-            font-size: 16px;
-        }
-        
-        @media (max-width: 600px) {
-            button,
-            .sidebar a {
-                padding: 8px 16px;
-                font-size: 14px;
-            }
-            body {
-                font-size: 14px;
-            }
-            .settings-container {
-                padding: 10px;
-            }
-        }
-        
+
         .main-content {
             flex-grow: 1;
             padding: 20px;
-            overflow-y: auto;
+            margin-left: 250px; /* Space for the sidebar */
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* Mobile Styles */
+        @media (max-width: 768px) {
+            .app-container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                position: static;
+                width: 100%;
+                height: auto;
+                padding: 10px;
+            }
+
+            .sidebar nav ul li {
+                margin-bottom: 10px;
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 10px;
+            }
+
+            .dashboard-card, .lesson-card {
+                width: 100%;
+                margin-bottom: 10px;
+            }
         }
     </style>
 </head>
 
 <body>
     <div class="app-container">
-        <!-- Menu Button for Mobile -->
-        <button class="menu-button" onclick="toggleSidebar()">☰ Menu</button>
-
         <!-- Sidebar -->
-        <aside class="sidebar" id="sidebar">
+        <aside class="sidebar">
             <nav>
                 <ul>
+                    <li><a href="#" onclick="showPage('dashboard')">Dashboard</a></li>
                     <li><a href="#" onclick="showPage('home')">Home</a></li>
-                    <li><a href="#" onclick="showPage('user')">User</a></li>
                     <li><a href="#" onclick="showPage('settings')">Settings</a></li>
+                    <li><a href="#" onclick="showPage('user')">User</a></li>
                 </ul>
             </nav>
         </aside>
 
-                <!-- Dashboard Page -->
-        <div id="dashboard-page" class="page">
-            <header>
-                <h1>Dashboard</h1>
-            </header>
-            <section>
-                <h2>Welcome back, John Doe!</h2>
-                <div class="dashboard-cards">
-                    <div class="dashboard-card">
-                        <h3>Lessons Completed</h3>
-                        <p>10</p>
-                    </div>
-                    <div class="dashboard-card">
-                        <h3>Accuracy Rate</h3>
-                        <p>85%</p>
-                    </div>
-                    <div class="dashboard-card">
-                        <h3>Current Streak</h3>
-                        <p>5 days</p>
-                    </div>
-                </div>
-                <button onclick="showPage('home')">Go to Learning</button>
-            </section>
-        </div>
-
         <!-- Main Content -->
         <div class="main-content">
-            <!-- Home Page (Learning English) -->
-            <div id="home-page" class="page active">
+            <!-- Dashboard Page -->
+            <div id="dashboard" class="page active">
                 <header>
-                    <h1>Learning English</h1>
+                    <h1>Dashboard</h1>
                 </header>
                 <section>
-                    <h2>Welcome back, .....</h2>
-                    <h3>Recommended for learning</h3>
-                </section>
-                <header class="custom-header">
-                    <h2>ประเภทการเรียนพูด</h2>
-                </header>
-                <section class="lesson-section">
-                    <div class="lesson-card">
-                        <div>
-                            <h2>Lesson 1</h2>
-                            <p>Basic Vocabulary</p>
-                                <button>Start Lesson</button>
-                            </a>
-                        </div>
-                    </div>
-                    <div class="lesson-card">
-                        <h2>Lesson 2</h2>
-                        <p>Common Phrases</p>
-                        <button>Start Lesson</button>
-                        </a>
-                    </div>
-                    <div class="lesson-card">
-                        <h2>Lesson 3</h2>
-                        <p>Grammar Rules</p>
-                        <button>Start Lesson</button>
-                        </a>
-                    </div>
-                    <div class="lesson-card">
-                        <h2>Lesson 4</h2>
-                        <p>Pronunciation</p>
-                        <button>Start Lesson</button>
-                        </a>
+                    <h2 id="welcome-message">Welcome back!</h2>
+                    <div class="dashboard-cards">
+                        <div class="dashboard-card"><h3>Lessons Completed</h3><p>10</p></div>
+                        <div class="dashboard-card"><h3>Accuracy Rate</h3><p>85%</p></div>
+                        <div class="dashboard-card"><h3>Current Streak</h3><p>5 days</p></div>
                     </div>
                 </section>
-                <footer>
-                    <button class="speech-btn" id="speech-btn" onclick="goToTestPage()">Speech</button>
-                </footer>
             </div>
 
-        
-            <!-- User Page -->
-            <div id="user-page" class="page">
-                <header>
-                    <h1>User Profile</h1>
-                </header>
+            <!-- Home Page -->
+            <div id="home" class="page">
+                <header><h1>Learning English</h1></header>
                 <section>
-                    <h2>User Information</h2>
-                    <p>Name: John Doe</p>
-                    <p>Email: john@example.com</p>
-                    <button onclick="showPage('home')">Back to Home</button>
+                    <h2 id="welcome-message">Welcome back!</h2>
+                    <div class="lesson-section">
+                        <div class="lesson-card"><h3>Lesson 1</h3><p>Basic Vocabulary</p><button>Start</button></div>
+                        <div class="lesson-card"><h3>Lesson 2</h3><p>Common Phrases</p><button>Start</button></div>
+                        <div class="lesson-card"><h3>Lesson 3</h3><p>Grammar Rules</p><button>Start</button></div>
+                        <div class="lesson-card"><h3>Lesson 4</h3><p>Pronunciation</p><button>Start</button></div>
+                    </div>
                 </section>
-                <footer>
-                    <p>Settings and preferences will appear here.</p>
-                </footer>
+                <footer><button class="speech-btn" id="speech-btn" onclick="goToTestPage()">Speech</button></footer>
             </div>
 
             <!-- Settings Page -->
-            <div id="settings-page" class="page">
-                <header>
-                    <h1>Settings</h1>
-                </header>
-                <section class="settings-container">
-                    <h2>Account Settings</h2>
-                    <label for="username">Username:</label>
-                    <input type="text" id="username" value="John Doe">
-                    <label for="email">Email:</label>
-                    <input type="email" id="email" value="john@example.com">
-                </section>
-                <section class="settings-container">
-                    <h2>Preferences</h2>
-                    <label for="language">Language:</label>
-                    <select id="language">
-                        <option value="en" selected>English</option>
-                        <option value="th">Thai</option>
-                    </select>
-                </section>
-                <footer>
-                    <button class="save-settings" onclick="saveSettings()">Save Settings</button>
-                    <button onclick="showPage('home')">Back to Home</button>
-                </footer>
-            </div>
-
-            <!-- Difficulty Selection Page -->
-            <div id="difficulty-page" class="page">
-                <header>
-                    <h1>Learning English</h1>
-                </header>
+            <div id="settings" class="page">
+                <header><h1>Settings</h1></header>
                 <section>
-                    <h2>Select Difficulty Level</h2>
-                </section>
-                <section class="lesson-section">
-                    <div class="lesson-card">
-                        <h2>Easy</h2>
-                        <button onclick="window.location.href='/easy'">Go to Easy Mode</button>
-                    </div>
-                    <div class="lesson-card">
-                        <h2>Medium</h2>
-                        <button onclick="window.location.href='/medium'">Go to Medium Mode</button>
-                    </div>
-                    <div class="lesson-card">
-                        <h2>Hard</h2>
-                        <button onclick="window.location.href='/hard'">Go to Hard Mode</button>
-                    </div>
+                    <h2>Language Preferences</h2>
+                    <form>
+                        <label><input type="radio" name="language" value="en" checked> English</label>
+                        <label><input type="radio" name="language" value="th"> Thai</label>
+                    </form>
                 </section>
             </div>
-
-
-        <!-- JavaScript to handle page navigation and predictions -->
-        <script>
-
-            function goToTestPage() {
-                window.location.href = "/test"; // Redirects to test.html
-            }
-
-
-            function showPage(pageId) {
-                const pages = document.querySelectorAll('.page');
-                pages.forEach(page => page.classList.remove('active'));
-                const targetPage = document.getElementById(`${pageId}-page`);
-                if (targetPage) {
-                    targetPage.classList.add('active');
-                } else {
-                    console.error(`Page with ID '${pageId}-page' not found.`);
-                }
-            }
-
-            function toggleSidebar() {
-                const sidebar = document.getElementById('sidebar');
-                sidebar.style.display = sidebar.style.display === 'block' ? 'none' : 'block';
-            }
-
-            function closeModal() {
-                const modal = document.getElementById("resultModal");
-                modal.style.display = "none";
-            }
-
-            window.onclick = function(event) {
-                const modal = document.getElementById("resultModal");
-                if (event.target === modal) {
-                    modal.style.display = "none";
-                }
-            };
-
-            window.onload = function() {
-                loadAudioFiles();
-            };
-        </script>
-
-        <!-- Additional JS Scripts -->
-        <script src="/static/script.js"></script>
-        <script src="/static/select.js"></script>
-        <script src="/static/upload.js"></script>
+        </div>
     </div>
+
+    <script>
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            
+            let activePage = document.getElementById(pageId);
+            if (activePage) {
+                activePage.classList.add('active');
+            } else {
+                console.error(`Page with ID "${pageId}" not found.`);
+            }
+        }
+
+        // Ensure "dashboard" is visible when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            showPage('dashboard');
+        });
+
+        // Function to go to the test page
+        function goToTestPage() {
+            window.location.href = "/test"; // Redirects to Flask test page
+        }
+    </script>
+
 </body>
 
 </html>

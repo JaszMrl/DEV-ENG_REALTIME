@@ -1,13 +1,141 @@
-/* General Styles */
+/* General Reset */
 body {
     margin: 0;
     padding: 0;
     font-family: 'Poppins', sans-serif;
-    background-color: #f4f4f9;
+    background-color: #f7f7f7;
+}
+
+/* ✅ App Container (for sidebar and content) */
+.app-container {
     display: flex;
-    justify-content: center;
-    align-items: center;
     height: 100vh;
+}
+
+/* ✅ Sidebar Styles (Same as Home Page) */
+.sidebar {
+    background-color: #333;
+    color: white;
+    width: 250px;
+    height: 100vh;
+    padding: 20px;
+    position: fixed;
+    left: 0;
+    top: 0;
+    transition: all 0.3s ease-in-out;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+}
+
+.sidebar nav ul li {
+    margin-bottom: 15px;
+    width: 100%;
+}
+
+.sidebar nav ul li a {
+    text-decoration: none;
+    color: white;
+    font-size: 1.1rem;
+    padding: 10px 20px;
+    display: block;
+    border-radius: 8px;
+    transition: background 0.3s ease, transform 0.3s ease;
+}
+
+.sidebar nav ul li a:hover {
+    background-color: #3B82F6;
+    transform: translateX(5px);
+}
+
+.sidebar nav ul li a.active {
+    background-color: #60A5FA;
+    font-weight: 600;
+    transform: translateX(5px);
+}
+
+/* ✅ Sidebar Toggle for Mobile */
+.sidebar-toggle {
+    display: none;
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    background: #007BFF;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    z-index: 1000;
+}
+
+/* ✅ Mobile Responsive Sidebar */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 200px;
+    }
+
+    .sidebar-toggle {
+        display: block;
+    }
+}
+
+@media (max-width: 600px) {
+    .sidebar {
+        width: 0;
+        padding: 0;
+        transform: translateX(-100%);
+    }
+
+    .sidebar-toggle {
+        display: block;
+    }
+}
+
+
+
+.main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: calc(100% - 250px);
+    margin-left: 250px;
+    height: 100vh;
+    padding: 40px;
+    transition: margin-left 0.3s ease-in-out;
+}
+
+/* Adjust for Small Screens */
+@media (max-width: 768px) {
+    .main-content {
+        width: 100%;
+        margin-left: 0;
+    }
+}
+
+
+/* ✅ Buttons */
+button {
+    padding: 10px 20px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+button:hover {
+    background-color: #0056b3;
+    transform: scale(1.05);
 }
 
 /* Speech Test Container */
@@ -17,9 +145,11 @@ body {
     border-radius: 15px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
     text-align: center;
-    width: 500px;
+    width: 600px; /* Wider for better layout */
     max-width: 90%;
 }
+
+
 
 /* Title */
 .test-container h1 {

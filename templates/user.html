@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-firestore.js"></script>
+    <script type="module" src="register.js" defer></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+            background-color: #f7f7f7;
+            display: flex;
+        }
+
+        .sidebar {
+            background-color: #333;
+            color: white;
+            width: 250px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar nav ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar nav ul li {
+            margin-bottom: 20px;
+        }
+
+        .sidebar nav ul li a {
+            text-decoration: none;
+            color: white;
+            font-size: 1rem;
+            padding: 10px 15px;
+            display: block;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .sidebar nav ul li a:hover {
+            background-color: #3B82F6;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(90deg, #1E3A8A, #2563EB);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .content h2 {
+            margin-bottom: 10px;
+            font-size: 20px;
+            color: #333;
+        }
+
+        .content p {
+            margin: 5px 0;
+            font-size: 16px;
+            color: #555;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-top: 5px;
+        }
+
+        .form-group button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .form-group button:hover {
+            background-color: #0056b3;
+        }
+
+        .logout-button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .logout-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <nav>
+                <ul>
+                    <li><a href="#" onclick="showPage('dashboard')">Dashboard</a></li>
+                    <li><a href="{{ url_for('home') }}">Home</a></li>
+                    <li><a href="{{ url_for('user') }}">User</a></li>
+                    <li><a href="{{ url_for('settings') }}">Settings</a></li>
+                </ul>   
+            </nav>
+        </aside>
+<div class="main-content">
+    <div class="header">User</div>
+
+    <div id="auth-section" class="content">
+        <!-- Toggle Buttons -->
+        <div style="text-align: center; margin-bottom: 20px;">
+            <button id="toggle-login" class="logout-button" style="margin-right: 10px;">Login</button>
+            <button id="toggle-register" class="logout-button">Register</button>
+        </div>
+
+        <!-- Login Form -->
+        <form id="login-form" style="display: block;">
+            <h2>Login</h2>
+            <div class="form-group">
+                <label for="login-email">Email</label>
+                <input type="email" id="login-email" placeholder="Enter your email" required>
+            </div>
+            <div class="form-group">
+                <label for="login-password">Password</label>
+                <input type="password" id="login-password" placeholder="Enter your password" required>
+            </div>
+            <div class="form-group">
+                <button type="submit">Login</button>
+            </div>
+        </form>
+
+        <!-- Register Form -->
+        <form id="register-form" style="display: none;">
+            <h2>Register</h2>
+            <div class="form-group">
+                <label for="name">Full Name</label>
+                <input type="text" id="name" placeholder="Enter your full name" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" placeholder="Enter your email" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Enter your password" required>
+            </div>
+            <div class="form-group">
+                <label for="school">School/University</label>
+                <input type="text" id="school" placeholder="Enter your school or university" required>
+            </div>
+            <div class="form-group">
+                <label for="grade">Grade/Year</label>
+                <input type="text" id="grade" placeholder="Enter your grade or year" required>
+            </div>
+            <div class="form-group">
+                <button type="submit">Register</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- User Information -->
+    <div id="user-info" class="content" style="display: none;">
+        <h2>User Information</h2>
+        <p><strong>Name:</strong> <span id="user-name">Loading...</span></p>
+        <p><strong>Email:</strong> <span id="user-email">Loading...</span></p>
+        <p><strong>School:</strong> <span id="user-school">Loading...</span></p>
+        <p><strong>Grade:</strong> <span id="user-grade">Loading...</span></p>
+        <button id="logout-btn" class="logout-button">Logout</button>
+    </div>
+</div>
+
+    <script>
+
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // DOM Elements
+        const loginForm = document.getElementById("login-form");
+        const registerForm = document.getElementById("register-form");
+        const userInfoSection = document.getElementById("user-info");
+        const toggleLogin = document.getElementById("toggle-login");
+        const toggleRegister = document.getElementById("toggle-register");
+
+        // Toggle between Login and Register forms
+        toggleLogin.addEventListener("click", () => {
+            loginForm.style.display = "block";
+            registerForm.style.display = "none";
+        });
+
+        toggleRegister.addEventListener("click", () => {
+            loginForm.style.display = "none";
+            registerForm.style.display = "block";
+        });
+
+        // Check if the user is logged in
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+        // Show user information
+        loginForm.style.display = "none";
+        registerForm.style.display = "none";
+        userInfoSection.style.display = "block";
+
+        // Fetch user details from Firestore
+        const userRef = db.collection("users").doc(user.uid);
+        userRef.get().then((doc) => {
+            if (doc.exists) {
+                const data = doc.data();
+                document.getElementById("user-name").textContent = data.name || "Anonymous";
+                document.getElementById("user-email").textContent = data.email || "No email provided";
+                document.getElementById("user-school").textContent = data.school || "Not specified";
+                document.getElementById("user-grade").textContent = data.grade || "Not specified";
+            }
+        });
+    } else {
+        // Show login/register form
+        userInfoSection.style.display = "none";
+        loginForm.style.display = "block"; // Default to login form
+    }
+});
+
+        // Handle Login
+        loginForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+            const email = document.getElementById("login-email").value;
+            const password = document.getElementById("login-password").value;
+
+            auth.signInWithEmailAndPassword(email, password)
+                .then(() => alert("Login successful!"))
+                .catch((error) => alert(error.message));
+        });
+
+        // Handle Registration
+        registerForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+            const name = document.getElementById("name").value;
+            const school = document.getElementById("school").value;
+            const grade = document.getElementById("grade").value;
+
+            auth.createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    const user = userCredential.user;
+
+                    // Save additional user info to Firestore
+                    db.collection("users").doc(user.uid).set({
+                        email: user.email,
+                        name: name || "Anonymous",
+                        school: school || "Not specified",
+                        grade: grade || "Not specified",
+                    }).then(() => alert("Registration successful!"))
+                    .catch((error) => console.error("Error saving user info:", error));
+                })
+                .catch((error) => alert(error.message));
+        });
+
+        // Handle Logout
+        document.getElementById("logout-btn").addEventListener("click", () => {
+            auth.signOut().then(() => alert("Logged out successfully!"));
+        });
+
+</script>
