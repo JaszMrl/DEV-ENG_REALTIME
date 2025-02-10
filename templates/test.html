@@ -21,7 +21,7 @@
             </nav>
         </aside>
 
-        <!-- ✅ Main Content Wrapper -->
+        <!-- ✅ Main Content -->
         <div class="main-content">
             <div class="test-container">
                 <h1>English Speech Test</h1>
@@ -35,230 +35,161 @@
                 <p id="test-result">Your accuracy will be displayed here...</p>
                 <h3>Points: <span id="points">0</span>/5</h3>
             </div>
+
+            <!-- ✅ Final Score Section -->
+            <div id="final-score-section" style="display:none; text-align:center; margin-top:20px;">
+                <h2>Final Score</h2>
+                <p id="final-score">Your final score will appear here.</p>
+                <p id="final-comment"></p>
+            </div>
         </div>
     </div>
-</body>
-</html>
- <script>
-    let sentences = { basic: [], intermediateLow: [], intermediateHigh: [], advanced: [], native: [] };
-    let levels = ["Basic/Beginner", "Intermediate Low", "Intermediate High", "Advanced", "Native/Fluent"];
-    let currentLevelIndex = 0;
-    let testCount = 0;
-    const totalTests = 5;
-    let totalScore = 0;
-    let points = 0;
-    let recognition;
 
-    // ✅ Start Speech Recognition
-    function startSpeechRecognition() {
-        console.log("🎙️ Requesting microphone access...");
+    <script>
+        let sentences = { basic: [], intermediateLow: [], intermediateHigh: [], advanced: [], native: [] };
+        let levels = ["Basic/Beginner", "Intermediate Low", "Intermediate High", "Advanced", "Native/Fluent"];
+        let currentLevelIndex = 0;
+        let testCount = 0;
+        const totalTests = 5;
+        let totalScore = 0;
+        let points = 0;
+        let recognition;
+        let usedSentences = {}; // Track used sentences for each level
 
-        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-            alert("❌ Speech Recognition is not supported in this browser. Try Chrome or Edge.");
-            return;
+        // ✅ Start Speech Recognition
+        function startSpeechRecognition() {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                alert("❌ Speech Recognition is not supported in this browser. Try Chrome or Edge.");
+                return;
+            }
+
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = "en-US";
+
+            recognition.onstart = function () {
+                document.getElementById("test-result").textContent = "Listening...";
+                document.getElementById("stop-speech-btn").disabled = false;
+            };
+
+            recognition.onspeechend = function () {
+                recognition.stop();
+            };
+
+            recognition.onresult = function (event) {
+                let userSpeech = event.results[0][0].transcript;
+                let targetSentence = document.getElementById("test-sentence").textContent;
+                analyzeSpeech(targetSentence, userSpeech);
+            };
+
+            recognition.onerror = function (event) {
+                alert(`Error with speech recognition: ${event.error}`);
+            };
+
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(() => recognition.start())
+                .catch(error => alert("Microphone access is blocked. Enable it in your browser settings."));
         }
 
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        recognition = new SpeechRecognition();
-
-        recognition.continuous = false;
-        recognition.interimResults = false;
-        recognition.lang = "en-US";
-
-        recognition.onstart = function () {
-            console.log("🎙️ Microphone activated. Start speaking...");
-            document.getElementById("test-result").textContent = "Listening...";
-            document.getElementById("stop-speech-btn").disabled = false;
-        };
-
-        recognition.onspeechend = function () {
-            console.log("🛑 Speech ended automatically.");
-            recognition.stop();
-        };
-
-        recognition.onresult = function (event) {
-            let userSpeech = event.results[0][0].transcript;
-            console.log("✅ Recognized Speech:", userSpeech);
-
-            let targetSentence = document.getElementById("test-sentence").textContent;
-            analyzeSpeech(targetSentence, userSpeech);
-        };
-
-        recognition.onerror = function (event) {
-            console.error("❌ Speech recognition error:", event.error);
-            alert(`Error with speech recognition: ${event.error}`);
-        };
-
-        navigator.mediaDevices.getUserMedia({ audio: true })
-            .then(() => {
-                console.log("✅ Microphone permission granted!");
-                recognition.start();
-            })
-            .catch(error => {
-                console.error("❌ Microphone access denied:", error);
-                alert("Microphone access is blocked. Enable it in your browser settings.");
-            });
-    }
-
-    // ✅ Stop Speech Recognition
-    function stopSpeechRecognition() {
-        if (recognition) {
-            console.log("🛑 Stopping speech recognition...");
-            recognition.stop();
+        // ✅ Stop Speech Recognition
+        function stopSpeechRecognition() {
+            if (recognition) recognition.stop();
             document.getElementById("test-result").textContent = "Speech recognition stopped.";
             document.getElementById("stop-speech-btn").disabled = true;
-        } else {
-            console.warn("⚠️ No active speech recognition session.");
         }
-    }
 
-    // ✅ Fetch Sentences from Flask API on Page Load
-    async function loadSentences() {
-        try {
-            console.log("🔄 Fetching sentences from server...");
-            const response = await fetch('/get-test-sentences');
+        // ✅ Fetch Sentences from Flask API
+        async function loadSentences() {
+            try {
+                const response = await fetch('/get-test-sentences');
+                if (!response.ok) throw new Error(`Failed to fetch sentences: ${response.status}`);
 
-            if (!response.ok) {
-                console.error(`❌ Fetch failed: ${response.status} ${response.statusText}`);
-                throw new Error(`Failed to fetch sentences: ${response.status}`);
+                const data = await response.json();
+                sentences = data;
+            } catch (error) {
+                document.getElementById("test-sentence").textContent = "Error loading sentences.";
+            }
+        }
+
+        // ✅ Generate Test Sentence
+        async function generateSentence() {
+            if (!sentences.basic.length) await loadSentences();
+
+            let levelKey = ["basic", "intermediateLow", "intermediateHigh", "advanced", "native"][currentLevelIndex];
+            let levelSentences = sentences[levelKey];
+
+            if (!levelSentences || levelSentences.length === 0) return;
+
+            if (!usedSentences[levelKey]) {
+                usedSentences[levelKey] = [...levelSentences].sort(() => Math.random() - 0.5);
             }
 
-            const data = await response.json();
-            console.log("✅ Received JSON:", data);
-
-            if (!data.basic || !data.intermediateLow || !data.intermediateHigh || !data.advanced || !data.native) {
-                console.error("❌ Invalid JSON structure:", data);
-                throw new Error("Invalid JSON structure.");
-            }
-
-            sentences = data;
-            console.log("✅ Sentences successfully loaded:", sentences);
-        } catch (error) {
-            console.error("❌ Error loading sentences:", error);
-            document.getElementById("test-sentence").textContent = "Error loading sentences.";
+            let testSentence = usedSentences[levelKey].shift();
+            document.getElementById("test-sentence").textContent = testSentence;
+            document.getElementById("start-speech-btn").disabled = false;
         }
-    }
 
-    let usedSentences = {}; // Track used sentences for each level
+        // ✅ Analyze Speech & Adjust Points
+        async function analyzeSpeech(targetSentence, userSpeech) {
+            try {
+                let strictnessLevels = ["medium", "high", "very_high"];
+                let currentStrictness = strictnessLevels[currentLevelIndex] || "medium";
 
-async function generateSentence() {
-    console.log("🎲 Generating sentence...");
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ target_sentence: targetSentence, user_speech: userSpeech, strictness: currentStrictness }),
+                });
 
-    if (!sentences.basic.length && !sentences.intermediateLow.length && !sentences.intermediateHigh.length && !sentences.advanced.length && !sentences.native.length) {
-        console.warn("⚠️ Sentences are empty, fetching...");
-        await loadSentences();
-    }
+                if (!response.ok) throw new Error(`Failed to analyze pronunciation: ${response.statusText}`);
 
-    let levelKey = ["basic", "intermediateLow", "intermediateHigh", "advanced", "native"][currentLevelIndex]; // Force ordered selection
-    let levelSentences = sentences[levelKey];
+                const result = await response.json();
+                let accuracy = result.accuracy || 0;
 
-    if (!levelSentences || levelSentences.length === 0) {
-        console.error(`❌ No sentences found for level: ${levels[currentLevelIndex]}`);
-        document.getElementById("test-sentence").textContent = "Error: No sentences available!";
-        return;
-    }
+                totalScore += accuracy;
+                testCount++;
 
-    // ✅ Initialize usedSentences for the current level if empty
-    if (!usedSentences[levelKey] || usedSentences[levelKey].length === 0) {
-        usedSentences[levelKey] = [...levelSentences]; // Clone sentences
-        usedSentences[levelKey] = usedSentences[levelKey].sort(() => Math.random() - 0.5); // Shuffle
-        console.log("🔀 Shuffled Sentences for:", levelKey, usedSentences[levelKey]);
-    }
+                if (accuracy >= 80) points++;
+                document.getElementById('points').textContent = points;
 
-    // ✅ Pick the first unused sentence and remove it from the list
-    let testSentence = usedSentences[levelKey].shift();
+                document.getElementById('test-result').innerHTML = `
+                    <p><strong>Target Sentence:</strong> "${targetSentence}"</p>
+                    <p><strong>Your Speech:</strong> "${userSpeech}"</p>
+                    <p><strong>Pronunciation Accuracy:</strong> ${accuracy.toFixed(2)}%</p>
+                `;
 
-    document.getElementById("test-sentence").textContent = testSentence;
-    document.getElementById("start-speech-btn").disabled = false;
-
-    console.log(`✅ Generated sentence from ${levelKey}: ${testSentence}`);
-}
-
-
-    // ✅ Analyze Speech & Adjust Points
-    async function analyzeSpeech(targetSentence, userSpeech) {
-        try {
-            const response = await fetch('/analyze', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ target_sentence: targetSentence, user_speech: userSpeech }),
-            });
-
-            if (!response.ok) {
-                throw new Error(`Failed to analyze pronunciation: ${response.statusText}`);
+                if (testCount >= totalTests) adjustLevel();
+            } catch (error) {
+                document.getElementById('test-result').textContent = "Error analyzing speech.";
             }
-
-            const result = await response.json();
-            console.log("🎙️ Analysis result:", result);
-
-            let accuracy = result.accuracy || 0;
-            totalScore += accuracy;
-            testCount++;
-
-            if (accuracy >= 80) points++; // Award points for good accuracy
-            document.getElementById('points').textContent = points; // Update points in UI
-
-            document.getElementById('test-result').innerHTML = `
-                <p><strong>Target Sentence:</strong> "${targetSentence}"</p>
-                <p><strong>Your Speech:</strong> "${userSpeech}"</p>
-                <p><strong>Pronunciation Accuracy:</strong> ${accuracy.toFixed(2)}%</p>
-            `;
-
-            if (testCount >= totalTests) adjustLevel();
-        } catch (error) {
-            console.error("❌ Error analyzing pronunciation:", error);
-            document.getElementById('test-result').textContent = "Error analyzing speech.";
         }
-    }
 
-    function adjustLevel() {
-    console.log(`📊 Points: ${points}/5 | Current Level: ${levels[currentLevelIndex]}`);
+        function adjustLevel() {
+            if (points >= 3 && currentLevelIndex < levels.length - 1) {
+                currentLevelIndex++;
+                document.getElementById("current-level").textContent = levels[currentLevelIndex];
+                alert(`🎉 You have leveled up to ${levels[currentLevelIndex]}!`);
+                points = 0;
+                testCount = 0;
+                totalScore = 0;
+                usedSentences = {};
+                document.getElementById('points').textContent = points;
+            } else {
+                showFinalScore();
+            }
+        }
 
-    if (points >= 3 && currentLevelIndex < levels.length - 1) {
-        currentLevelIndex++; // Move to the next level
-        document.getElementById("current-level").textContent = levels[currentLevelIndex];
-        alert(`🎉 You have leveled up to ${levels[currentLevelIndex]}!`);
+        function showFinalScore() {
+            let finalPercentage = Math.floor((totalScore / (testCount * 100)) * 100);
+            document.getElementById("final-score").innerHTML = `📝 <strong>Your Overall Score:</strong> ${finalPercentage}%`;
+            document.getElementById("final-comment").innerHTML = `💬 Keep practicing!`;
+            document.getElementById("final-score-section").style.display = "block";
+        }
 
-        points = 0;
-        testCount = 0;
-        totalScore = 0;
-        usedSentences = {}; // ✅ Reset used sentences to start fresh
-
-        document.getElementById('points').textContent = points;
-    } else if (currentLevelIndex === levels.length - 1 && testCount >= totalTests) {
-        showFinalScore(); // ✅ Show final score when all levels are completed
-    } else {
-        alert(`⚠️ You need at least 3/5 to level up. Keep practicing!`);
-        testCount = 0;
-    }
-
-    document.getElementById('points').textContent = points;
-}
-
-
-function showFinalScore() {
-    let performanceComments = [
-        { min: 90, message: "🔥 Excellent! You're near fluent!" },
-        { min: 80, message: "✅ Great job! Almost there!" },
-        { min: 70, message: "👍 Good work! Keep improving!" },
-        { min: 50, message: "⚠️ Decent, but more practice is needed!" },
-        { min: 0, message: "❌ Needs improvement. Keep going!" }
-    ];
-
-    let finalPercentage = Math.floor((totalScore / (totalTests * levels.length)) * 100);
-    let finalComment = performanceComments.find(c => finalPercentage >= c.min).message;
-
-    // ✅ Update final score section instead of using an alert
-    document.getElementById("final-score").innerHTML = `📝 <strong>Your Overall Score:</strong> ${finalPercentage}%`;
-    document.getElementById("final-comment").innerHTML = `💬 <strong>Final Comment:</strong> ${finalComment}`;
-
-    // ✅ Show the final score section
-    document.getElementById("final-score-section").style.display = "block";
-}
-
-
-    document.addEventListener("DOMContentLoaded", async function () { await loadSentences(); });
-
+        document.addEventListener("DOMContentLoaded", async function () { await loadSentences(); });
     </script>
 </body>
 </html>
