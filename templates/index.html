@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="/static/styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Basic styles */
+        /* สไตล์พื้นฐาน */
         body {
             font-family: 'Poppins', sans-serif;
             margin: 0;
@@ -68,7 +68,7 @@
             display: block;
         }
 
-        /* Mobile Styles */
+        /* สไตล์สำหรับอุปกรณ์มือถือ */
         @media (max-width: 768px) {
         .app-container {
             flex-direction: column;
@@ -104,7 +104,7 @@
 
 <body>
     <div class="app-container">
-        <!-- Sidebar -->
+        <!-- แถบด้านข้าง -->
         <aside class="sidebar">
             <nav>
                 <ul>
@@ -116,9 +116,9 @@
             </nav>
         </aside>
 
-        <!-- Main Content -->
+        <!-- เนื้อหาหลัก -->
         <div class="main-content">
-            <!-- Dashboard Page -->
+            <!-- หน้าแดชบอร์ด -->
             <div id="dashboard" class="page active">
                 <header>
                     <h1>Dashboard</h1>
@@ -133,7 +133,7 @@
                 </section>
             </div>
 
-            <!-- Home Page -->
+            <!-- หน้าหลัก -->
             <div id="home" class="page">
                 <header><h1>Learning English</h1></header>
                 <section>
@@ -148,7 +148,7 @@
                 <footer><button class="speech-btn" id="speech-btn" onclick="goToTestPage()">Speech</button></footer>
             </div>
 
-            <!-- Settings Page -->
+            <!-- หน้าตั้งค่า -->
             <div id="settings" class="page">
                 <header><h1>Settings</h1></header>
                 <section>
@@ -174,14 +174,14 @@
             }
         }
 
-        // Ensure "dashboard" is visible when the page loads
+        // ตรวจสอบให้แน่ใจว่าหน้า "dashboard" ปรากฏเมื่อโหลดหน้า
         document.addEventListener('DOMContentLoaded', () => {
             showPage('dashboard');
         });
 
-        // Function to go to the test page
+        // ฟังก์ชันเพื่อไปยังหน้าทดสอบ
         function goToTestPage() {
-            window.location.href = "/test"; // Redirects to Flask test page
+            window.location.href = "/test"; // หน้าที่นำไปยังหน้าทดสอบของ Flask
         }
     </script>
 

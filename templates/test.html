@@ -9,7 +9,7 @@
 
 <body>
     <div class="app-container">
-        <!-- ✅ Sidebar -->
+        <!-- ✅ แถบด้านข้าง -->
         <aside class="sidebar">
             <nav>
                 <ul>
@@ -21,7 +21,7 @@
             </nav>
         </aside>
 
-        <!-- ✅ Main Content -->
+        <!-- ✅ เนื้อหาหลัก -->
         <div class="main-content">
             <div class="test-container">
                 <h1>English Speech Test</h1>
@@ -36,7 +36,7 @@
                 <h3>Points: <span id="points">0</span>/5</h3>
             </div>
 
-            <!-- ✅ Final Score Section -->
+            <!-- ✅ ส่วนคะแนนสุดท้าย -->
             <div id="final-score-section" style="display:none; text-align:center; margin-top:20px;">
                 <h2>Final Score</h2>
                 <p id="final-score">Your final score will appear here.</p>
@@ -54,9 +54,9 @@
         let totalScore = 0;
         let points = 0;
         let recognition;
-        let usedSentences = {}; // Track used sentences for each level
+        let usedSentences = {}; // ติดตามประโยคที่ใช้ในแต่ละระดับ
 
-        // ✅ Start Speech Recognition
+        // ✅ เริ่มการจดจำเสียง
         function startSpeechRecognition() {
             if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
                 alert("❌ Speech Recognition is not supported in this browser. Try Chrome or Edge.");
@@ -94,14 +94,14 @@
                 .catch(error => alert("Microphone access is blocked. Enable it in your browser settings."));
         }
 
-        // ✅ Stop Speech Recognition
+        // ✅ หยุดการจดจำเสียง
         function stopSpeechRecognition() {
             if (recognition) recognition.stop();
             document.getElementById("test-result").textContent = "Speech recognition stopped.";
             document.getElementById("stop-speech-btn").disabled = true;
         }
 
-        // ✅ Fetch Sentences from Flask API
+        // ✅ ดึงประโยคจาก Flask API
         async function loadSentences() {
             try {
                 const response = await fetch('/get-test-sentences');
@@ -114,7 +114,7 @@
             }
         }
 
-        // ✅ Generate Test Sentence
+        // ✅ สร้างประโยคทดสอบ
         async function generateSentence() {
             if (!sentences.basic.length) await loadSentences();
 
@@ -132,7 +132,7 @@
             document.getElementById("start-speech-btn").disabled = false;
         }
 
-        // ✅ Analyze Speech & Adjust Points
+        // ✅ วิเคราะห์การพูดและปรับคะแนน
         async function analyzeSpeech(targetSentence, userSpeech) {
             try {
                 let strictnessLevels = ["medium", "high", "very_high"];
