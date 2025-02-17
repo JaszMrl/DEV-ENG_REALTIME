@@ -78,14 +78,15 @@ body {
 /* Main Content */
 .main-content {
     flex-grow: 1;
+    padding: 20px;
+    margin-left: 250px; /* Space for the sidebar */
     display: flex;
     flex-direction: column;
-    align-items: center; /* Ensures all content is centered */
-    justify-content: flex-start; /* Align content to the top */
-    width: calc(100% - 250px);
-    margin-left: 250px;
-    padding: 40px;
+    align-items: center; /* Centers content horizontally */
+    justify-content: center; /* Centers content vertically */
+    min-height: 100vh;
 }
+
 
 
 .page {
@@ -146,8 +147,6 @@ header {
     margin: 0;
     border-radius: 10px;
 }
-
-
 
 header .logo {
     display: flex;
@@ -380,13 +379,6 @@ button:hover, .speech-btn:hover, .lesson-card button:hover {
         opacity: 1;
         transform: translateY(0);
     }
-}
-
-/* Element-Specific Animations */
-
-/* Page Container Fade-In */
-#easy-page {
-    animation: fadeIn 1s ease-in-out;
 }
 
 /* Dropdown Animation */
