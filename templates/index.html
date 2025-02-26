@@ -6,9 +6,71 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>English Learning App</title>
     <link rel="stylesheet" href="/static/styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        /* สไตล์พื้นฐาน */
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">\
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti"></script>
+<style>
+    /* สไตล์พื้นฐาน */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @keyframes zoomIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        #welcome-message {
+            animation: fadeInUp 1s ease-in-out;
+        }
+        
+        .dashboard-card {
+            opacity: 0;
+            animation: zoomIn 0.8s ease-in-out forwards;
+        }
+        
+        .dashboard-card:nth-child(1) {
+            animation-delay: 0.3s;
+        }
+        .dashboard-card:nth-child(2) {
+            animation-delay: 0.6s;
+        }
+        .dashboard-card:nth-child(3) {
+            animation-delay: 0.9s;
+        }
+        .leaderboard, .challenge-card {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+            text-align: center;
+            animation: fadeInUp 1s ease-in-out;
+        }
         body {
             font-family: 'Poppins', sans-serif;
             margin: 0;
@@ -84,19 +146,17 @@
         }
 
         .main-content {
-            margin-left: 0;
-            padding: 10px;
+            margin-left: 0; /* Remove sidebar offset */
+            width: 100%; /* Ensure full width */
+            justify-content: center; /* Center content */
+            align-items: center; /* Center content */
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
         }
 
         .dashboard-card, .lesson-card {
             width: 90%; /* Make sure cards take up proper width */
-            max-width: 400px; /* Prevent too wide */
-            margin-bottom: 10px;
+            max-width: 300px; /* Prevent too wide */
         }
 }
     </style>
@@ -121,7 +181,6 @@
             <!-- หน้าแดชบอร์ด -->
             <div id="dashboard" class="page active">
                 <header>
-                    <h1>Dashboard</h1>
                 </header>
                 <section>
                     <h2 id="welcome-message">Welcome back!</h2>
