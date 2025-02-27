@@ -230,54 +230,48 @@
             </div>
         </div>
     </div>
+<!-- ✅ Add Firebase SDK in the <head> -->
+    <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-auth-compat.js"></script>
 
-    <script>
-        function showPage(pageId) {
-    // Hide all pages first
-    document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+<script>
+    // ✅ Firebase Configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyDX18_aJbcVXz3xcrQtxAL1WNcm7BO2U1k",
+        authDomain: "english-app-2ede3.firebaseapp.com",
+        projectId: "english-app-2ede3",
+        storageBucket: "english-app-2ede3.firebasestorage.app",
+        messagingSenderId: "46267452346",
+        appId: "1:46267452346:web:81fb68d5836e0532c4ab83",
+        measurementId: "G-Y9KXDJ6NFD"
+    };
 
-    // Get the selected page and show it
-    let activePage = document.getElementById(pageId);
-    if (activePage) {
-        activePage.classList.add('active');
-        console.log(`Navigating to: ${pageId}`); // ✅ Debugging log to check if function is working
-    } else {
-        console.error(`Page with ID "${pageId}" not found.`);
-    }
-}
+    // ✅ Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
 
-// Ensure that the dashboard is visible when the page loads
-document.addEventListener('DOMContentLoaded', () => {
-    showPage('dashboard');
-});
-
-
-        // ฟังก์ชันเพื่อไปยังหน้าทดสอบ
-        function goToTestPage() {
-            window.location.href = "/test"; // หน้าที่นำไปยังหน้าทดสอบของ Flask
-        }
-
-        function updateGreeting() {
+    // ✅ Function to get time-based motivational message
+    function getMotivationalMessage() {
         const hours = new Date().getHours();
-        let message = "Welcome back!";
         if (hours < 12) {
-            message = "🌞 Good morning! Ready to improve your pronunciation?";
+            return "🌞 Good morning! Ready to improve your pronunciation?";
         } else if (hours < 18) {
-            message = "🌅 Good afternoon! Keep up the great work!";
+            return "🌅 Good afternoon! Keep up the great work!";
         } else {
-            message = "🌙 Good evening! Don't forget to practice before bed!";
+            return "🌙 Good evening! Don't forget to practice before bed!";
         }
-        document.getElementById("welcome-message").innerText = message;
     }
-        function updateProgress(percentage) {
-        document.getElementById("progress-bar").style.width = percentage + "%";
-        document.getElementById("progress-value").innerText = percentage;
-}
 
-    document.addEventListener("DOMContentLoaded", updateGreeting);
+    // ✅ Function to update welcome message
+    function updateWelcomeMessage() {
+        const motivationalMessage = getMotivationalMessage();
 
-    </script>
+        auth.onAuthStateChanged(user => {
+            let userName = user ? user.displayName || "User" : "User";
+            document.getElementById("welcome-message").innerText = `${motivationalMessage} ${userName}!`;
+        });
+    }
 
-</body>
-
-</html>
+    // ✅ Run functions when the page loads
+    document.addEventListener("DOMContentLoaded", updateWelcomeMessage);
+</script>
