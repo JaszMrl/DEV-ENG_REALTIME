@@ -6,144 +6,198 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Settings</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        /* General styling */
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Poppins', sans-serif;
-            background-color: #f7f7f7;
-            display: flex;
-        }
-
-        .sidebar {
-            background-color: #333;
-            color: white;
-            width: 250px;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            padding: 20px;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .sidebar nav ul {
-            list-style: none;
-            padding: 0;
-        }
-
-        .sidebar nav ul li {
-            margin-bottom: 20px;
-        }
-
-        .sidebar nav ul li a {
-            text-decoration: none;
-            color: white;
-            font-size: 1rem;
-            padding: 10px 15px;
-            display: block;
-            border-radius: 5px;
-            transition: background-color 0.3s;
-        }
-
-        .sidebar nav ul li a:hover {
-            background-color: #3B82F6;
-        }
-
-        .main-content {
-            flex-grow: 1;
-            padding: 20px;
-        }
-
-        .header {
-            background: linear-gradient(90deg, #1E3A8A, #2563EB);
-            color: white;
-            padding: 20px;
-            text-align: center;
-            font-size: 24px;
-            font-weight: bold;
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
-
-        .content {
-            background-color: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .content h2 {
-            margin-bottom: 10px;
-            font-size: 20px;
-            color: #333;
-        }
-
-        .content form {
-            margin-bottom: 20px;
-        }
-
-        .content form label {
-            font-size: 16px;
-            margin-bottom: 5px;
-            display: block;
-            color: #555;
-        }
-
-        .content form input[type="radio"] {
-            margin-right: 5px;
-        }
-
-        .content form button {
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        .content form button:hover {
-            background-color: #0056b3;
-        }
-
-        .logout-button {
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            display: inline-block;
-            margin-top: 10px;
-        }
-
-        .logout-button:hover {
-            background-color: #0056b3;
-        }
-    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script> <!-- ✅ GSAP for animations -->
 </head>
 
+<style>
+    /* ✅ General Styling */
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Poppins', sans-serif;
+        background-color: #f7f7f7;
+        display: flex;
+    }
+
+    /* ✅ Sidebar */
+    .sidebar {
+        background-color: #333;
+        color: white;
+        width: 250px;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .sidebar nav ul {
+        list-style: none;
+        padding: 0;
+    }
+
+    .sidebar nav ul li {
+        margin-bottom: 20px;
+    }
+
+    .sidebar nav ul li a {
+        text-decoration: none;
+        color: white;
+        font-size: 1rem;
+        padding: 10px 15px;
+        display: block;
+        border-radius: 5px;
+        transition: background-color 0.3s, transform 0.2s;
+    }
+
+    .sidebar nav ul li a:hover {
+        background-color: #3B82F6;
+        transform: translateX(5px);
+    }
+
+    /* ✅ Main Content */
+    .main-content {
+        flex-grow: 1;
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        opacity: 0;
+    }
+
+    /* ✅ Header */
+    .header {
+        background: linear-gradient(90deg, #1E3A8A, #2563EB);
+        color: white;
+        padding: 20px;
+        text-align: center;
+        font-size: 24px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    /* ✅ Content Card */
+    .content {
+        background-color: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        opacity: 0;
+        transform: scale(0.9);
+        width: 100%;
+        max-width: 500px;
+    }
+
+    /* ✅ Form */
+    .content h2 {
+        margin-bottom: 10px;
+        font-size: 20px;
+        color: #333;
+    }
+
+    .content form label {
+        font-size: 16px;
+        display: block;
+        color: #555;
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+
+    .content form input[type="radio"] {
+        margin-right: 5px;
+    }
+
+    .content form button {
+        background-color: #007BFF;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.2s;
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    .content form button:hover {
+        background-color: #0056b3;
+        transform: scale(1.05);
+    }
+
+    /* ✅ Logout Button */
+    .logout-button {
+        background-color: #007BFF;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.2s;
+        display: inline-block;
+        margin-top: 10px;
+    }
+
+    .logout-button:hover {
+        background-color: #0056b3;
+        transform: scale(1.05);
+    }
+
+    /* ✅ Animations */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* ✅ Dark Mode */
+    .dark-mode {
+        background-color: #1E1E1E;
+        color: white;
+    }
+
+    .dark-mode .content {
+        background: #2E2E2E;
+    }
+
+    .dark-mode .logout-button {
+        background-color: #60A5FA;
+    }
+</style>
+
 <body>
-    <div class="sidebar">
+    <!-- ✅ Sidebar -->
+    <aside class="sidebar">
         <nav>
             <ul>
-                <li><a href="{{ url_for('home') }}">Home</a></li>
+                <li><a href="{{ url_for('home') }}">Dashboard</a></li>
                 <li><a href="{{ url_for('user') }}">User</a></li>
-                <li><a href="{{ url_for('settings') }}">Settings</a></li>
+                <li><a href="{{ url_for('settings') }}" class="active">Settings</a></li>
+                <li><a href="{{ url_for('speech_test') }}">Speech Test</a></li>
             </ul>
         </nav>
-    </div>
+    </aside>
 
+    <!-- ✅ Main Content -->
     <div class="main-content">
-        <div class="header">
-            Settings
-        </div>
-
         <div class="content">
-            <h2>Language Selection</h2>
+            <!-- 🎨 Dark Mode Toggle -->
+            <h2>Theme Settings 🌙</h2>
+            <button id="toggle-dark-mode">🌞 Light Mode</button>
+
+            <hr>
+
+            <!-- 🌍 Language Selection -->
+            <h2>Language Selection 🌐</h2>
             <form id="language-form">
                 <label>
                     <input type="radio" name="language" value="en" checked> English
@@ -155,7 +209,18 @@
                 <button type="submit">Save Language</button>
             </form>
 
-            <h2>User Profile</h2>
+            <hr>
+
+            <!-- 📊 Usage Stats -->
+            <h2>📊 Usage Statistics</h2>
+            <p><strong>Lessons Completed:</strong> <span id="lessons-completed">10</span></p>
+            <p><strong>Time Spent:</strong> <span id="time-spent">25 minutes</span></p>
+            <p><strong>Highest Accuracy:</strong> <span id="best-accuracy">92%</span></p>
+
+            <hr>
+
+            <!-- 👤 User Profile -->
+            <h2>User Profile 👤</h2>
             <p><strong>Name:</strong> <span id="user-name">Loading...</span></p>
             <p><strong>Email:</strong> <span id="user-email">Loading...</span></p>
             <button class="logout-button" id="logout-btn">Logout</button>
@@ -163,108 +228,23 @@
     </div>
 
     <script>
-        // Firebase configuration
-        const firebaseConfig = {
-        apiKey: "AIzaSyDX18_aJbcVXz3xcrQtxAL1WNcm7BO2U1k",
-        authDomain: "english-app-2ede3.firebaseapp.com",
-        projectId: "english-app-2ede3",
-        storageBucket: "english-app-2ede3.firebasestorage.app",
-        messagingSenderId: "46267452346",
-        appId: "1:46267452346:web:81fb68d5836e0532c4ab83",
-        measurementId: "G-Y9KXDJ6NFD"
-        };
-
-        // Initialize Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-
-        // Load user profile from Firebase
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                document.getElementById("user-name").textContent = user.displayName || "Anonymous";
-                document.getElementById("user-email").textContent = user.email || "No email provided";
-            } else {
-                window.location.href = "{{ url_for('home') }}";
-            }
+        // ✅ Page Load Animations
+        document.addEventListener("DOMContentLoaded", function () {
+            gsap.to(".main-content", { opacity: 1, duration: 1 });
+            gsap.to(".header", { opacity: 1, y: 0, duration: 1, delay: 0.3 });
+            gsap.to(".content", { opacity: 1, scale: 1, duration: 1, delay: 0.6 });
+            gsap.to("form label", { opacity: 1, x: 0, duration: 0.8, stagger: 0.1 });
+            gsap.to("form button", { opacity: 1, y: 0, duration: 0.8, delay: 1 });
         });
 
-        // Handle language selection
-        document.getElementById("language-form").addEventListener("submit", (e) => {
-            e.preventDefault();
-            const selectedLanguage = document.querySelector('input[name="language"]:checked').value;
-            alert(`Language set to ${selectedLanguage === "en" ? "English" : "Thai"}`);
-            const user = auth.currentUser;
-            if (user) {
-                db.collection("users").doc(user.uid).update({
-                    language: selectedLanguage
-                }).then(() => {
-                    alert("Language preference saved successfully.");
-                }).catch((error) => {
-                    console.error("Error saving language preference:", error);
-                });
-            }
+        // ✅ Dark Mode Toggle
+        document.getElementById("toggle-dark-mode").addEventListener("click", function () {
+            document.body.classList.toggle("dark-mode");
+            let mode = document.body.classList.contains("dark-mode") ? "Light Mode" : "Dark Mode";
+            document.getElementById("toggle-dark-mode").textContent = mode;
         });
 
-        // Handle logout
-        document.getElementById("logout-btn").addEventListener("click", () => {
-            auth.signOut().then(() => {
-                window.location.href = "{{ url_for('home') }}";
-            }).catch((error) => {
-                console.error("Error logging out:", error);
-            });
-        });
-
-        // Toggle Forms
-        document.getElementById("toggle-login").addEventListener("click", () => {
-            document.getElementById("login-form").style.display = "block";
-            document.getElementById("register-form").style.display = "none";
-        });
-
-        document.getElementById("toggle-register").addEventListener("click", () => {
-            document.getElementById("login-form").style.display = "none";
-            document.getElementById("register-form").style.display = "block";
-        });
-
-        // Login Functionality
-        document.getElementById("login-form").addEventListener("submit", (e) => {
-            e.preventDefault();
-            const email = document.getElementById("login-email").value;
-            const password = document.getElementById("login-password").value;
-
-            auth.signInWithEmailAndPassword(email, password)
-                .then(() => alert("Login successful!"))
-                .catch((error) => alert(error.message));
-        });
-
-        // Register Functionality
-        document.getElementById("register-form").addEventListener("submit", (e) => {
-            e.preventDefault();
-            const email = document.getElementById("register-email").value;
-            const password = document.getElementById("register-password").value;
-            const name = document.getElementById("register-name").value;
-            const school = document.getElementById("register-school").value;
-            const grade = document.getElementById("register-grade").value;
-
-            auth.createUserWithEmailAndPassword(email, password)
-                .then((userCredential) => {
-                    const user = userCredential.user;
-
-                    // Save additional user data to Firestore
-                    db.collection("users").doc(user.uid).set({
-                        email: user.email,
-                        name: name || "Anonymous",
-                        school: school || "Not specified",
-                        grade: grade || "Not specified",
-                    }).then(() => {
-                        alert("Registration successful!");
-                    }).catch((error) => {
-                        console.error("Error saving user data: ", error);
-                    });
-                })
-                .catch((error) => alert(error.message));
-        });
     </script>
-</body>
 
+</body>
 </html>

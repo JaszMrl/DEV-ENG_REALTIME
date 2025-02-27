@@ -12,19 +12,20 @@ body {
     height: 100vh;
 }
 
-/* ✅ Sidebar Styles (Same as Home Page) */
+/* ✅ Standard Sidebar Styling for All Pages */
 .sidebar {
     background-color: #333;
     color: white;
     width: 250px;
     height: 100vh;
-    padding: 20px;
+    padding: 20px 0;
     position: fixed;
-    left: 0;
     top: 0;
-    transition: all 0.3s ease-in-out;
+    left: 0;
     display: flex;
     flex-direction: column;
+    justify-content: start;
+    font-size: 1.1rem; /* ✅ Make sure font size is consistent */
 }
 
 .sidebar nav ul {
@@ -42,7 +43,8 @@ body {
 .sidebar nav ul li a {
     text-decoration: none;
     color: white;
-    font-size: 1.1rem;
+    font-size: 1.1rem; /* ✅ Same Font Size as Index Page */
+    font-weight: 500;
     padding: 10px 20px;
     display: block;
     border-radius: 8px;
@@ -59,6 +61,8 @@ body {
     font-weight: 600;
     transform: translateX(5px);
 }
+
+
 
 /* ✅ Sidebar Toggle for Mobile */
 .sidebar-toggle {
