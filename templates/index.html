@@ -49,8 +49,13 @@
         }
         
         .dashboard-card {
-            opacity: 0;
-            animation: zoomIn 0.8s ease-in-out forwards;
+            background: linear-gradient(135deg, #3B82F6, #1E40AF);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
         }
         
         .dashboard-card:nth-child(1) {
@@ -180,19 +185,27 @@
         <div class="main-content">
             <!-- หน้าแดชบอร์ด -->
             <div id="dashboard" class="page active">
-                <header>
-                </header>
+                <header></header>
                 <section>
                     <h2 id="welcome-message">Welcome back!</h2>
                     <div class="dashboard-cards">
-                        <div class="dashboard-card"><h3>Lessons Completed</h3><p>10</p></div>
-                        <div class="dashboard-card"><h3>Accuracy Rate</h3><p>85%</p></div>
-                        <div class="dashboard-card"><h3>Current Streak</h3><p>5 days</p></div>
+                        <div class="dashboard-card">
+                            <h3>📚 Lessons Completed</h3>
+                            <p>10</p>
+                        </div>
+                        <div class="dashboard-card">
+                            <h3>🎯 Accuracy Rate</h3>
+                            <p>85%</p>
+                        </div>
+                        <div class="dashboard-card">
+                            <h3>🔥 Current Streak</h3>
+                            <p>5 days</p>
+                        </div>
                     </div>
                 </section>
-            </div>
-
-            <!-- หน้าหลัก -->
+            </div> <!-- ✅ Correctly closes the dashboard section -->
+            
+            <!-- ✅ Ensure that the Home section is separate -->
             <div id="home" class="page">
                 <header><h1>Learning English</h1></header>
                 <section>
@@ -206,6 +219,7 @@
                 </section>
                 <footer><button class="speech-btn" id="speech-btn" onclick="goToTestPage()">Speech</button></footer>
             </div>
+            
 
             <!-- หน้าตั้งค่า -->
             <div id="settings" class="page">
