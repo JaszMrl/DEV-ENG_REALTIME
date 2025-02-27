@@ -9,19 +9,19 @@
 
 <body>
     <div class="app-container">
-        <!-- ✅ แถบด้านข้าง -->
+        <!-- ✅ Sidebar -->
         <aside class="sidebar">
             <nav>
                 <ul>
-                    <li><a href="#" onclick="showPage('dashboard')">Dashboard</a></li>
-                    <li><a href="#" onclick="showPage('home')">Home</a></li>
-                    <li><a href="#" onclick="showPage('settings')">Settings</a></li>
-                    <li><a href="#" onclick="showPage('user')">User</a></li>
+                    <li><a href="index.html" onclick="showPage('dashboard')">Dashboard</a></li>
+                    <li><a href="index.html" onclick="showPage('home')">Home</a></li>
+                    <li><a href="index.html" onclick="showPage('settings')">Settings</a></li>
+                    <li><a href="index.html" onclick="showPage('user')">User</a></li>
                 </ul>
             </nav>
         </aside>
 
-        <!-- ✅ เนื้อหาหลัก -->
+        <!-- ✅ Main Content -->
         <div class="main-content">
             <div class="test-container">
                 <h1>English Speech Test</h1>
@@ -36,17 +36,32 @@
                 <h3>Points: <span id="points">0</span>/5</h3>
             </div>
 
-            <!-- ✅ ส่วนคะแนนสุดท้าย -->
+            <!-- ✅ Final Score Section -->
             <div id="final-score-section" style="display:none; text-align:center; margin-top:20px;">
                 <h2>Final Score</h2>
                 <p id="final-score">Your final score will appear here.</p>
                 <p id="final-comment"></p>
             </div>
+
+            <!-- ✅ Back to Home Button -->
+            <div class="back-home-container">
+                <button onclick="goBackHome()">🏠 Back to Home</button>
+            </div>
+
         </div>
     </div>
-        <!-- Link to the JavaScript file -->
-        <script src="/static/test.js"></script>
-    </body>
-    </html>
+
+    <!-- ✅ Link to the JavaScript file -->
+    <script src="/static/test.js"></script>
+
+    <!-- ✅ Back to Home Function -->
+    <script>
+        function goBackHome() {
+            window.location.href = "/";
+        }
+
+    </script>
+
 </body>
 </html>
+

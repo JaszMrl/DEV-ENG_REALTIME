@@ -163,6 +163,51 @@
             width: 90%; /* Make sure cards take up proper width */
             max-width: 300px; /* Prevent too wide */
         }
+
+        .goal-tracker {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            background: #ddd;
+            border-radius: 5px;
+            height: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress {
+            background: #3B82F6;
+            height: 10px;
+            transition: width 0.5s ease-in-out;
+        }
+
+        .chart-container {
+            width: 100%;
+            max-width: 500px; /* Adjust width */
+            height: 300px; /* Make it taller */
+            background: white; /* White background for contrast */
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            text-align: center;
+            margin: 30px auto; /* Centers the chart */
+        }
+
+        .chart-container h3 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+
+
+
 }
     </style>
 </head>
@@ -237,25 +282,49 @@
 
     <script>
         function showPage(pageId) {
-            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
-            
-            let activePage = document.getElementById(pageId);
-            if (activePage) {
-                activePage.classList.add('active');
-            } else {
-                console.error(`Page with ID "${pageId}" not found.`);
-            }
-        }
+    // Hide all pages first
+    document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
 
-        // ตรวจสอบให้แน่ใจว่าหน้า "dashboard" ปรากฏเมื่อโหลดหน้า
-        document.addEventListener('DOMContentLoaded', () => {
-            showPage('dashboard');
-        });
+    // Get the selected page and show it
+    let activePage = document.getElementById(pageId);
+    if (activePage) {
+        activePage.classList.add('active');
+        console.log(`Navigating to: ${pageId}`); // ✅ Debugging log to check if function is working
+    } else {
+        console.error(`Page with ID "${pageId}" not found.`);
+    }
+}
+
+// Ensure that the dashboard is visible when the page loads
+document.addEventListener('DOMContentLoaded', () => {
+    showPage('dashboard');
+});
+
 
         // ฟังก์ชันเพื่อไปยังหน้าทดสอบ
         function goToTestPage() {
             window.location.href = "/test"; // หน้าที่นำไปยังหน้าทดสอบของ Flask
         }
+
+        function updateGreeting() {
+        const hours = new Date().getHours();
+        let message = "Welcome back!";
+        if (hours < 12) {
+            message = "🌞 Good morning! Ready to improve your pronunciation?";
+        } else if (hours < 18) {
+            message = "🌅 Good afternoon! Keep up the great work!";
+        } else {
+            message = "🌙 Good evening! Don't forget to practice before bed!";
+        }
+        document.getElementById("welcome-message").innerText = message;
+    }
+        function updateProgress(percentage) {
+        document.getElementById("progress-bar").style.width = percentage + "%";
+        document.getElementById("progress-value").innerText = percentage;
+}
+
+    document.addEventListener("DOMContentLoaded", updateGreeting);
+
     </script>
 
 </body>
