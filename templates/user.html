@@ -4,9 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Profile</title>
+    <!-- ✅ Load Firebase Before user.js -->
     <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-auth-compat.js"></script>
-    <script src="/static/user.js"></script> <!-- ✅ Load user.js AFTER Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-storage-compat.js"></script>
+
+    <!-- ✅ Ensure this is loaded after Firebase -->
+    <script src="/static/user.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
 </head>
@@ -76,13 +81,86 @@
         background: white;
         padding: 30px;
         border-radius: 15px;
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
         text-align: center;
         width: 100%;
         max-width: 450px;
         animation: fadeIn 1s ease-in-out;
     }
-    
+
+    /* ✅ User Info Section */
+    .user-info {
+        background: #f0f0f5;
+        padding: 15px;
+        border-radius: 10px;
+        width: 100%;
+        max-width: 400px;
+        margin-bottom: 20px;
+    }
+
+    .user-info h3 {
+        color: #3B82F6;
+        font-size: 18px;
+        margin-bottom: 10px;
+    }
+
+    .user-info p {
+        font-size: 14px;
+        color: #555;
+        font-weight: 500;
+    }
+
+    /* ✅ Update Form */
+    .update-info {
+        background: white;
+        padding: 15px;
+        border-radius: 10px;
+        width: 100%;
+        max-width: 400px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .update-info h3 {
+        color: #3B82F6;
+        font-size: 18px;
+        margin-bottom: 10px;
+    }
+
+    .update-info input, 
+    .update-info select {
+        width: 90%; /* ✅ Reduce size */
+        max-width: 300px; /* ✅ Limit width */
+        padding: 8px; /* ✅ Reduce padding */
+        font-size: 14px; /* ✅ Reduce font size */
+        border-radius: 6px;
+        margin: 5px 0;
+        border: 1px solid #ccc;
+        transition: all 0.3s ease-in-out;
+    }
+
+    .update-info button {
+        background-color: #3B82F6;
+        color: white;
+        border: none;
+        padding: 10px;
+        font-size: 16px;
+        border-radius: 5px;
+        margin-top: 10px;
+        cursor: pointer;
+        width: 100%;
+    }
+
+    .update-info button:hover {
+        background-color: #1E40AF;
+        transform: scale(1.05);
+    }
+
+    .logout-container {
+    display: flex;
+    justify-content: center; /* Centers horizontally */
+    margin-top: 20px; /* Adds space above */
+    }
+        
     /* ✅ Buttons */
     button {
         background-color: #3B82F6;
@@ -116,6 +194,15 @@
         from { opacity: 0; transform: translateY(20px); }
         to { opacity: 1; transform: translateY(0); }
     }
+
+        .hidden {
+        display: none;
+    }
+
+    #update-info-container {
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
     </style>
 <body>
     <div class="app-container">
@@ -134,8 +221,6 @@
         <!-- ✅ Main Content -->
         <div class="main-content">
             <div class="profile-card">
-                <h2>User Authentication</h2>
-
                 <!-- ✅ Login Form -->
                 <div id="login-form">
                     <h3>Login</h3>
@@ -157,9 +242,38 @@
 
                 <!-- ✅ User Profile (Hidden Initially) -->
                 <div id="user-profile" style="display: none;">
+                    <div class="user-info">
+                        <h3>👤 User Information</h3>
+                        <p><strong>Full Name:</strong> <span id="user-fullname">-</span></p>
+                        <p><strong>Gender:</strong> <span id="user-gender">-</span></p>
+                        <p><strong>Age:</strong> <span id="user-age">-</span></p>
+                        <p><strong>Nationality:</strong> <span id="user-nationality">-</span></p>
+                    </div>   
+
+                    <!-- ✅ Toggle Button -->
+                    <button id="toggle-update-form">✏️ Edit Profile</button>
+
+                    <!-- ✅ Update Info Form (Initially Hidden) -->
+                    <div id="update-info-container" class="hidden">
+                        <div class="update-info">
+                            <h3>📝 Update Your Information</h3>
+                            <input type="text" id="update-fullname" placeholder="Full Name">
+                            <select id="update-gender">
+                                <option value="">Select Gender</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                            <input type="number" id="update-age" placeholder="Age">
+                            <input type="text" id="update-nationality" placeholder="Nationality">
+                            <button id="update-info-btn">Update Info</button>
+                        </div>
+                    </div>             
                     <h2>Welcome, <span id="user-name"></span>!</h2>
                     <p><strong>Email:</strong> <span id="user-email"></span></p>
-                    <button id="logout-btn">Logout</button>
+                    <div class="logout-container">
+                        <button id="logout-btn" class="btn btn-primary">Logout</button>
+                    </div>
                 </div>
             </div>
         </div>

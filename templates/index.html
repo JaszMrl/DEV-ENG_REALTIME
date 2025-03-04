@@ -7,8 +7,10 @@
     <title>English Learning App</title>
     <link rel="stylesheet" href="/static/styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">\
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-firestore-compat.js"></script>
+
 <style>
     /* สไตล์พื้นฐาน */
         @keyframes fadeInUp {
@@ -189,17 +191,21 @@
                             <p>10</p>
                         </div>
                         <div class="dashboard-card">
-                            <h3>🎯 Accuracy Rate</h3>
-                            <p>85%</p>
+                            <h3>📊 Your Overall Accuracy: <span id="user-accuracy">0.00%</span></h3>
                         </div>
                         <div class="dashboard-card">
                             <h3>🔥 Current Streak</h3>
-                            <p>5 days</p>
+                            <p><span id="user-streak">0</span> days</p>
+                        </div>
+                        <div class="dashboard-card">
+                            <h3>🏆 Your Score: <span id="user-score">0</span></h3>
+                        </div>
+                        <div class="dashboard-card">
+                            <h3>🎯 Your Level: <span id="user-level">Basic/Beginner</span></h3>
                         </div>
                     </div>
                 </section>
-            </div> <!-- ✅ Correctly closes the dashboard section -->
-            
+            </div>
             
             <!-- ✅ Ensure that the Home section is separate -->
             <div id="home" class="page">
@@ -230,10 +236,6 @@
             </div>
         </div>
     </div>
-<!-- ✅ Add Firebase SDK in the <head> -->
-    <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-auth-compat.js"></script>
-
 <script>
     // ✅ Firebase Configuration
     const firebaseConfig = {
@@ -249,6 +251,7 @@
     // ✅ Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
+    const db = firebase.firestore();  // ✅ Make sure this line is present!
 
     // ✅ Function to get time-based motivational message
     function getMotivationalMessage() {
@@ -271,6 +274,167 @@
             document.getElementById("welcome-message").innerText = `${motivationalMessage} ${userName}!`;
         });
     }
+
+    // ✅ Load Points & Level from Firebase
+    document.addEventListener("DOMContentLoaded", function () {
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                let userRef = db.collection("users").doc(user.uid);
+                userRef.get().then((doc) => {
+                    if (doc.exists) {
+                        let userData = doc.data();
+                        document.getElementById("user-points").textContent = userData.points || 0;
+                        document.getElementById("user-level").textContent = userData.level || "Basic/Beginner";
+                    }
+                });
+            }
+        });
+    });
+
+    function updateUserStats(points, level) {
+    if (typeof db === "undefined") {
+        console.error("❌ Firestore (db) is not initialized.");
+        return;
+    }
+    }
+
+    auth.onAuthStateChanged(user => {
+    if (user) {
+        const userRef = db.collection("users").doc(user.uid);
+
+        userRef.get().then((doc) => {
+            let data = doc.exists ? doc.data() : {};
+            let lastLogin = data.lastLogin ? new Date(data.lastLogin) : null;
+            let streak = data.streak || 0;
+            let today = new Date();
+            today.setHours(0, 0, 0, 0); // Normalize time
+
+            if (lastLogin) {
+                let difference = (today - lastLogin) / (1000 * 60 * 60 * 24); // Difference in days
+
+                if (difference === 1) {
+                    streak++; // Continue streak
+                } else if (difference > 1) {
+                    streak = 1; // Reset streak if missed a day
+                }
+            } else {
+                streak = 1; // First login
+            }
+
+            // ✅ Update the streak and last login date in Firestore
+            userRef.set({
+                lastLogin: today.toISOString(),
+                streak: streak
+            }, { merge: true })
+            .then(() => console.log(`✅ Streak updated: ${streak} days`))
+            .catch(error => console.error("❌ Error updating streak:", error));
+        });
+    } else {
+        console.error("❌ No user logged in.");
+    }
+});
+
+
+function loadUserStats(userId) {
+    if (!userId) {
+        console.error("❌ Error: User ID is undefined.");
+        return;
+    }
+
+    const userRef = db.collection("users").doc(userId);
+
+    userRef.get()
+        .then((doc) => {
+            if (doc.exists) {
+                let data = doc.data();
+                console.log("✅ User Data:", JSON.stringify(data));
+
+                let streakElement = document.getElementById("user-streak");
+                let scoreElement = document.getElementById("user-score");
+                let levelElement = document.getElementById("user-level");
+
+                if (streakElement) {
+                    streakElement.textContent = data.streak || "0"; // Default to 0
+                } else {
+                    console.warn("⚠️ Warning: #user-streak element not found.");
+                }
+
+                if (scoreElement) {
+                    scoreElement.textContent = data.score || "0.00";
+                } else {
+                    console.warn("⚠️ Warning: #user-score element not found.");
+                }
+
+                if (levelElement) {
+                    levelElement.textContent = data.level || "Unknown";
+                } else {
+                    console.warn("⚠️ Warning: #user-level element not found.");
+                }
+            } else {
+                console.log("❌ No user data found.");
+            }
+        })
+        .catch(error => console.error("❌ Error fetching user data:", error));
+}
+
+// ✅ Load user data on dashboard
+document.addEventListener("DOMContentLoaded", loadUserStats);
+
+document.addEventListener("DOMContentLoaded", function () {
+    if (typeof getTestScore !== "function") {
+        console.error("❌ Error: getTestScore is not defined. Ensure the script is loaded.");
+        return;
+    }
+
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            const userId = user.uid;
+            console.log("✅ Logged-in User ID:", userId);
+
+            if (document.getElementById("user-score") && document.getElementById("user-level") && document.getElementById("user-accuracy")) {
+                getTestScore(userId);
+            } else {
+                console.warn("⚠️ Warning: One or more dashboard elements are missing.");
+            }
+        } else {
+            console.error("❌ No user logged in.");
+            alert("You must be logged in to view your stats.");
+        }
+    });
+});
+
+function getTestScore(userId) {
+    if (!userId) {
+        console.error("❌ Error: User ID is undefined.");
+        return;
+    }
+
+    const userRef = db.collection("users").doc(userId);
+    userRef.get()
+        .then((doc) => {
+            if (doc.exists) {
+                let data = doc.data();
+                console.log(`✅ User Data:`, data);
+
+                let scoreElement = document.getElementById("user-score");
+                let levelElement = document.getElementById("user-level");
+                let accuracyElement = document.getElementById("user-accuracy");
+
+                if (scoreElement) scoreElement.textContent = data.score || "0.00";
+                else console.warn("⚠️ Warning: #user-score element not found.");
+
+                if (levelElement) levelElement.textContent = data.level || "Unknown";
+                else console.warn("⚠️ Warning: #user-level element not found.");
+
+                if (accuracyElement) accuracyElement.textContent = data.overallAccuracy ? `${data.overallAccuracy}%` : "0.00%";
+                else console.warn("⚠️ Warning: #user-accuracy element not found.");
+            } else {
+                console.log("❌ No test score found.");
+            }
+        })
+        .catch(error => console.error("❌ Error fetching score:", error));
+}
+
 
     // ✅ Run functions when the page loads
     document.addEventListener("DOMContentLoaded", updateWelcomeMessage);

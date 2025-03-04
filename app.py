@@ -81,7 +81,7 @@ def analyze_pronunciation():
             """Combines Levenshtein ratio and SequenceMatcher for accurate phoneme comparison."""
             seq_match_score = SequenceMatcher(None, phoneme1, phoneme2).ratio()
             lev_score = ratio(phoneme1, phoneme2)
-            return (seq_match_score + lev_score) / 2  # Average score of both methods
+            return (lev_score * 0.7) + (seq_match_score * 0.3)  # Average score of both methods
 
         # การเปรียบเทียบเสียงพยางค์
         correct = sum(phoneme_similarity(t, u) for t, u in zip(target_phonemes, user_phonemes))
@@ -90,13 +90,13 @@ def analyze_pronunciation():
 
         # ส่งเสริมการจับคู่ที่แทบจะสมบูรณ์แบบ (ให้คะแนน 100% สมบูรณ์)
         if accuracy > 95:
-            accuracy = 100
+            accuracy *= 0.98
 
         # การใช้ความเข้มงวด (ใช้เฉพาะเมื่อมีข้อผิดพลาด)
         if strictness == "high" and accuracy < 95:
-            accuracy *= 0.90  # 10% penalty if below 95%
+            accuracy *= 0.85  # 10% penalty if below 95%
         elif strictness == "very_high" and accuracy < 98:
-            accuracy *= 0.85  # 15% penalty if below 98%
+            accuracy *= 0.75  # 15% penalty if below 98%
 
         # ให้แน่ใจว่าความแม่นยำอยู่ระหว่าง 0-100%
         accuracy = max(0, min(accuracy, 100))
