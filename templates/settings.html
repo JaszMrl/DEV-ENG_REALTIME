@@ -1,181 +1,179 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Settings</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script> <!-- ✅ GSAP for animations -->
-</head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+            background-color: #f7f7f7;
+            color: #333;
+            display: flex;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
 
-<style>
-    /* ✅ General Styling */
-    body {
-        margin: 0;
-        padding: 0;
-        font-family: 'Poppins', sans-serif;
-        background-color: #f7f7f7;
-        display: flex;
-    }
+        .dark-mode {
+            background-color: #1E1E1E;
+            color: #f1f1f1;
+        }
 
-    /* ✅ Sidebar */
-    .sidebar {
-        background-color: #333;
-        color: white;
-        width: 250px;
-        height: 100vh;
-        display: flex;
-        flex-direction: column;
-        padding: 20px;
-        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-    }
+        .settings-container {
+            background: white;
+            width: 90%;
+            max-width: 400px;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            opacity: 0;
+            transition: background 0.3s ease;
+        }
 
-    .sidebar nav ul {
-        list-style: none;
-        padding: 0;
-    }
+        .dark-mode .settings-container {
+            background: #333;
+        }
 
-    .sidebar nav ul li {
-        margin-bottom: 20px;
-    }
+        h2 {
+            font-size: 20px;
+            color: inherit;
+        }
 
-    .sidebar nav ul li a {
-        text-decoration: none;
-        color: white;
-        font-size: 1rem;
-        padding: 10px 15px;
-        display: block;
-        border-radius: 5px;
-        transition: background-color 0.3s, transform 0.2s;
-    }
+        .sidebar {
+            background-color: #333;
+            color: white;
+            width: 250px;
+            height: 100vh;
+            padding: 20px;
+            position: fixed;
+            transition: background 0.3s ease;
+        }
 
-    .sidebar nav ul li a:hover {
-        background-color: #3B82F6;
-        transform: translateX(5px);
-    }
+        .dark-mode .sidebar {
+            background-color: #222;
+        }
 
-    /* ✅ Main Content */
-    .main-content {
-        flex-grow: 1;
-        padding: 40px;
+        .sidebar nav ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar nav ul li {
+            margin-bottom: 20px;
+        }
+
+        .sidebar nav ul li a {
+            text-decoration: none;
+            color: white;
+            font-size: 1rem;
+            padding: 10px 15px;
+            display: block;
+            border-radius: 5px;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        .sidebar nav ul li a:hover {
+            background-color: #3B82F6;
+            transform: translateX(5px);
+        }
+
+        .main-content {
+            flex-grow: 1;
+            padding: 40px;
+            text-align: center;
+            margin-left: 250px;
+            opacity: 0;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        .content {
+            background-color: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 450px;
+            margin: auto;
+            opacity: 0;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        .dark-mode .content {
+            background-color: #2E2E2E;
+            color: #f1f1f1;
+        }
+
+        .small-btn {
+            padding: 8px 12px;
+            font-size: 14px;
+            border: none;
+            background-color: #007BFF;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease, transform 0.2s;
+            margin-top: 10px;
+        }
+
+        .small-btn:hover {
+            background: #0056b3;
+            transform: scale(1.05);
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+            text-align: left;
+        }
+
+        textarea, select, input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 8px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            background: inherit;
+            color: inherit;
+        }
+
+        textarea {
+            resize: none; /* Disable resizing */
+            height: 80px; /* Fixed height */
+        }
+
+        .feedback-container {
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        text-align: center;
-        opacity: 0;
-    }
-
-    /* ✅ Header */
-    .header {
-        background: linear-gradient(90deg, #1E3A8A, #2563EB);
-        color: white;
-        padding: 20px;
-        text-align: center;
-        font-size: 24px;
-        font-weight: bold;
-        border-radius: 10px;
-        margin-bottom: 20px;
-        opacity: 0;
-        transform: translateY(-20px);
-    }
-
-    /* ✅ Content Card */
-    .content {
-        background-color: white;
-        padding: 30px;
-        border-radius: 10px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        opacity: 0;
-        transform: scale(0.9);
         width: 100%;
-        max-width: 500px;
+        margin-top: 15px; /* Adds vertical spacing above */
+        margin-bottom: 20px; /* Adds spacing below */
     }
 
-    /* ✅ Form */
-    .content h2 {
-        margin-bottom: 10px;
-        font-size: 20px;
-        color: #333;
+        .feedback-label {
+        margin-bottom: 10px; /* Space between label and dropdown */
+        font-weight: 600;
     }
 
-    .content form label {
-        font-size: 16px;
-        display: block;
-        color: #555;
-        opacity: 0;
-        transform: translateX(-20px);
-    }
-
-    .content form input[type="radio"] {
-        margin-right: 5px;
-    }
-
-    .content form button {
-        background-color: #007BFF;
-        color: white;
-        border: none;
-        padding: 10px 15px;
+        .feedback-box {
+        width: 80%;
+        max-width: 400px;
+        height: 150px;
+        border: 1px solid #ccc;
+        padding: 10px;
         border-radius: 5px;
-        cursor: pointer;
-        transition: background-color 0.3s ease, transform 0.2s;
-        opacity: 0;
-        transform: translateY(10px);
+        resize: none;
+        text-align: left;
     }
 
-    .content form button:hover {
-        background-color: #0056b3;
-        transform: scale(1.05);
-    }
 
-    /* ✅ Logout Button */
-    .logout-button {
-        background-color: #007BFF;
-        color: white;
-        border: none;
-        padding: 10px 15px;
-        border-radius: 5px;
-        cursor: pointer;
-        transition: background-color 0.3s ease, transform 0.2s;
-        display: inline-block;
-        margin-top: 10px;
-    }
-
-    .logout-button:hover {
-        background-color: #0056b3;
-        transform: scale(1.05);
-    }
-
-    /* ✅ Animations */
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    /* ✅ Dark Mode */
-    .dark-mode {
-        background-color: #1E1E1E;
-        color: white;
-    }
-
-    .dark-mode .content {
-        background: #2E2E2E;
-    }
-
-    .dark-mode .logout-button {
-        background-color: #60A5FA;
-    }
-</style>
-
+    </style>
+</head>
 <body>
-    <!-- ✅ Sidebar -->
     <aside class="sidebar">
         <nav>
             <ul>
@@ -187,64 +185,62 @@
         </nav>
     </aside>
 
-    <!-- ✅ Main Content -->
     <div class="main-content">
         <div class="content">
-            <!-- 🎨 Dark Mode Toggle -->
-            <h2>Theme Settings 🌙</h2>
-            <button id="toggle-dark-mode">🌞 Light Mode</button>
+            <h2>⚙️ Settings</h2>
 
-            <hr>
+            <div class="form-group">
+                <label>🌗 Theme Mode</label>
+                <button id="toggle-theme" class="small-btn">Switch to Dark Mode</button>
+            </div>
 
-            <!-- 🌍 Language Selection -->
-            <h2>Language Selection 🌐</h2>
-            <form id="language-form">
-                <label>
-                    <input type="radio" name="language" value="en" checked> English
-                </label>
-                <label>
-                    <input type="radio" name="language" value="th"> Thai
-                </label>
-                <br><br>
-                <button type="submit">Save Language</button>
-            </form>
+            <div class="form-group">
+                <label>🌍 Language Preferences</label>
+                <select id="language-preference">
+                    <option value="en">English</option>
+                    <option value="th">Thai</option>
+                    <option value="es">Spanish</option>
+                    <option value="fr">French</option>
+                    <option value="de">German</option>
+                    <option value="zh">Chinese</option>
+                </select>
+                <button class="small-btn" id="save-language">Save</button>
+            </div>
 
-            <hr>
-
-            <!-- 📊 Usage Stats -->
-            <h2>📊 Usage Statistics</h2>
-            <p><strong>Lessons Completed:</strong> <span id="lessons-completed">10</span></p>
-            <p><strong>Time Spent:</strong> <span id="time-spent">25 minutes</span></p>
-            <p><strong>Highest Accuracy:</strong> <span id="best-accuracy">92%</span></p>
-
-            <hr>
-
-            <!-- 👤 User Profile -->
-            <h2>User Profile 👤</h2>
-            <p><strong>Name:</strong> <span id="user-name">Loading...</span></p>
-            <p><strong>Email:</strong> <span id="user-email">Loading...</span></p>
-            <button class="logout-button" id="logout-btn">Logout</button>
+            <div class="form-group">
+                <label>💡 Feedback & Suggestions</label>
+                <div class="feedback-container">
+                    <select>
+                        <option>Feature Request</option>
+                        <option>Bug Report</option>
+                        <option>General Feedback</option>
+                    </select>
+                    <textarea class="feedback-box" placeholder="Write your feedback..."></textarea>
+                </div>
+                           
+                <button class="small-btn" id="submit-feedback">Send</button>
+            </div>
         </div>
     </div>
 
     <script>
-        // ✅ Page Load Animations
         document.addEventListener("DOMContentLoaded", function () {
-            gsap.to(".main-content", { opacity: 1, duration: 1 });
-            gsap.to(".header", { opacity: 1, y: 0, duration: 1, delay: 0.3 });
-            gsap.to(".content", { opacity: 1, scale: 1, duration: 1, delay: 0.6 });
-            gsap.to("form label", { opacity: 1, x: 0, duration: 0.8, stagger: 0.1 });
-            gsap.to("form button", { opacity: 1, y: 0, duration: 0.8, delay: 1 });
+            gsap.to(".main-content", { opacity: 1, duration: 1, y: -10, delay: 0.3 });
+            gsap.to(".content", { opacity: 1, duration: 1, y: -10, delay: 0.5 });
         });
 
-        // ✅ Dark Mode Toggle
-        document.getElementById("toggle-dark-mode").addEventListener("click", function () {
+        function toggleDarkMode() {
             document.body.classList.toggle("dark-mode");
-            let mode = document.body.classList.contains("dark-mode") ? "Light Mode" : "Dark Mode";
-            document.getElementById("toggle-dark-mode").textContent = mode;
-        });
+            localStorage.setItem("dark-mode", document.body.classList.contains("dark-mode") ? "enabled" : "disabled");
+            document.getElementById("toggle-theme").textContent = document.body.classList.contains("dark-mode") ? "Switch to Light Mode" : "Switch to Dark Mode";
+        }
 
+        document.getElementById("toggle-theme").addEventListener("click", toggleDarkMode);
+
+        if (localStorage.getItem("dark-mode") === "enabled") {
+            document.body.classList.add("dark-mode");
+            document.getElementById("toggle-theme").textContent = "Switch to Light Mode";
+        }
     </script>
-
 </body>
 </html>

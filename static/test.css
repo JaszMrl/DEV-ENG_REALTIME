@@ -165,7 +165,6 @@ button:hover {
 /* Test Sentence */
 #test-sentence {
     font-size: 20px;
-    font-weight: bold;
     color: #444;
     padding: 15px;
     background: #eef2ff;
@@ -199,7 +198,6 @@ button:disabled {
 /* Results Display */
 #test-result {
     font-size: 18px;
-    font-weight: bold;
     color: #333;
     margin-top: 20px;
 }
