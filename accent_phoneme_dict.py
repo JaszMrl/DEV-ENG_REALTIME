@@ -67,5 +67,6 @@ ACCENT_PHONEME_DICT = {
         "neither": "ˈniːðə",  # Slight simplification
         "leisure": "ˈliːʒə",  # Matches en-US
         "schedule": "ˈskɛdʒul",  # Matches en-US
+        "tea": "tiː",
     }
 }

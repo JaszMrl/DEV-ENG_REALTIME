@@ -34,9 +34,82 @@
             transition: background 0.3s ease;
         }
 
-        .dark-mode .settings-container {
-            background: #333;
-        }
+/* Center the theme switch */
+.theme-switch-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 300px;
+    margin: auto;
+    padding: 10px 0;
+}
+
+/* Toggle switch styling */
+.theme-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 25px;
+}
+
+.theme-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+/* Slider for dark mode */
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.4s;
+    border-radius: 25px;
+}
+
+/* The circle inside the switch */
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 4px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+}
+
+/* When toggled, move slider */
+input:checked + .slider {
+    background-color: #007BFF;
+}
+
+input:checked + .slider:before {
+    transform: translateX(25px);
+}
+
+/* Dark Mode Styling */
+body.dark-mode {
+    background-color: #1e1e1e;
+    color: white;
+}
+
+.dark-mode .content {
+    background-color: #2a2a2a;
+    color: white;
+}
+
+.dark-mode .feedback-box {
+    background-color: #333;
+    color: white;
+}
+
 
         h2 {
             font-size: 20px;
@@ -102,11 +175,6 @@
             transition: background 0.3s ease, color 0.3s ease;
         }
 
-        .dark-mode .content {
-            background-color: #2E2E2E;
-            color: #f1f1f1;
-        }
-
         .small-btn {
             padding: 8px 12px;
             font-size: 14px;
@@ -170,7 +238,6 @@
         text-align: left;
     }
 
-
     </style>
 </head>
 <body>
@@ -189,10 +256,13 @@
         <div class="content">
             <h2>⚙️ Settings</h2>
 
-            <div class="form-group">
-                <label>🌗 Theme Mode</label>
-                <button id="toggle-theme" class="small-btn">Switch to Dark Mode</button>
-            </div>
+            <div class="theme-switch-container">
+                <span>🌗 Theme Mode</span>
+                <label class="theme-switch">
+                    <input type="checkbox" id="theme-toggle">
+                    <span class="slider"></span>
+                </label>
+            </div>            
 
             <div class="form-group">
                 <label>🌍 Language Preferences</label>
@@ -225,22 +295,31 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
+            // GSAP Animations
             gsap.to(".main-content", { opacity: 1, duration: 1, y: -10, delay: 0.3 });
             gsap.to(".content", { opacity: 1, duration: 1, y: -10, delay: 0.5 });
+    
+            // Select the dark mode toggle switch
+            const themeToggle = document.getElementById("theme-toggle");
+    
+            // Function to toggle dark mode
+            function toggleDarkMode() {
+                document.body.classList.toggle("dark-mode");
+    
+                // Save preference to localStorage
+                localStorage.setItem("dark-mode", document.body.classList.contains("dark-mode") ? "enabled" : "disabled");
+            }
+    
+            // Check localStorage for dark mode setting
+            if (localStorage.getItem("dark-mode") === "enabled") {
+                document.body.classList.add("dark-mode");
+                themeToggle.checked = true; // Ensure toggle is on
+            }
+    
+            // Add event listener for theme switch
+            themeToggle.addEventListener("change", toggleDarkMode);
         });
-
-        function toggleDarkMode() {
-            document.body.classList.toggle("dark-mode");
-            localStorage.setItem("dark-mode", document.body.classList.contains("dark-mode") ? "enabled" : "disabled");
-            document.getElementById("toggle-theme").textContent = document.body.classList.contains("dark-mode") ? "Switch to Light Mode" : "Switch to Dark Mode";
-        }
-
-        document.getElementById("toggle-theme").addEventListener("click", toggleDarkMode);
-
-        if (localStorage.getItem("dark-mode") === "enabled") {
-            document.body.classList.add("dark-mode");
-            document.getElementById("toggle-theme").textContent = "Switch to Light Mode";
-        }
     </script>
+    
 </body>
 </html>

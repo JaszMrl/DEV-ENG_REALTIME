@@ -236,7 +236,6 @@ function getTestScore(userId) {
         .catch(error => console.error("❌ Error fetching score:", error));
 }
 
-
 // ✅ Analyze Speech and Update Firestore
 async function analyzeSpeech(targetSentence, userSpeech) {
     const user = auth.currentUser;
@@ -245,8 +244,15 @@ async function analyzeSpeech(targetSentence, userSpeech) {
         return;
     }
 
-    const userId = user.uid;
+    if (!targetSentence || !userSpeech) {
+        console.error("❌ Error: Empty target sentence or user speech.");
+        document.getElementById('test-result').textContent = "Error: No speech detected.";
+        return;
+    }
 
+    console.log(`🎯 Target: ${targetSentence} | 🎤 User: ${userSpeech}`);
+
+    const userId = user.uid;
     try {
         let strictnessLevels = ["medium", "high", "very_high"];
         let currentStrictness = strictnessLevels[currentLevelIndex] || "medium";
@@ -254,13 +260,22 @@ async function analyzeSpeech(targetSentence, userSpeech) {
         const response = await fetch('/analyze', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ target_sentence: targetSentence, user_speech: userSpeech, strictness: currentStrictness })
+            body: JSON.stringify({
+                target_sentence: targetSentence.trim(),
+                user_speech: userSpeech.trim(),
+                strictness: currentStrictness,
+                language: "en-US"
+            })
         });
 
-        if (!response.ok) throw new Error("Failed to analyze pronunciation.");
+        if (!response.ok) {
+            let errorMessage = await response.json();
+            throw new Error(errorMessage.error || "Failed to analyze pronunciation.");
+        }
+
         const result = await response.json();
         let accuracy = result.accuracy || 0;
-        let level = levels[currentLevelIndex]; // ✅ Get current level
+        let level = levels[currentLevelIndex];
 
         totalScore += accuracy;
         testCount++;
@@ -276,7 +291,7 @@ async function analyzeSpeech(targetSentence, userSpeech) {
             <p><strong>Pronunciation Accuracy:</strong> ${accuracy.toFixed(2)}%</p>
         `;
 
-        // ✅ Save overall accuracy
+        // ✅ Save updated score
         saveTestScore(userId, totalScore, level, accuracy);
 
         if (testCount >= totalTests) {
@@ -287,7 +302,6 @@ async function analyzeSpeech(targetSentence, userSpeech) {
         document.getElementById('test-result').textContent = "Error analyzing speech.";
     }
 }
-
 
 // ✅ Adjust User Level
 function adjustLevel(userId) {
@@ -340,7 +354,6 @@ document.addEventListener("DOMContentLoaded", function () {
             document.getElementById("start-speech-btn")?.addEventListener("click", () => startSpeechRecognition(userId));
         } else {
             console.error("❌ No user logged in.");
-            alert("You must be logged in to save scores.");
         }
     });
 });

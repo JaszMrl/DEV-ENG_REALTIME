@@ -25,7 +25,7 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: start;
-    font-size: 1.1rem; /* ✅ Make sure font size is consistent */
+    font-size: 1rem; /* ✅ Make sure font size is consistent */
 }
 
 .sidebar nav ul {
@@ -43,7 +43,7 @@ body {
 .sidebar nav ul li a {
     text-decoration: none;
     color: white;
-    font-size: 1.1rem; /* ✅ Same Font Size as Index Page */
+    font-size: 1rem; /* ✅ Same Font Size as Index Page */
     font-weight: 500;
     padding: 10px 20px;
     display: block;
@@ -58,7 +58,7 @@ body {
 
 .sidebar nav ul li a.active {
     background-color: #60A5FA;
-    font-weight: 600;
+    font-weight: 500;
     transform: translateX(5px);
 }
 

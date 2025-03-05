@@ -62,26 +62,20 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // ✅ Handle Logout
-    document.addEventListener("DOMContentLoaded", function () {
-        const logoutBtn = document.getElementById("logout-btn");
-
-        if (logoutBtn) {
-            logoutBtn.addEventListener("click", function () {
-                firebase.auth().signOut()
-                    .then(() => {
-                        console.log("✅ User Logged Out");
-                        alert("✅ Logged Out Successfully!");
-                        window.location.href = "index.html"; // Redirect to login page
-                    })
-                    .catch(error => {
-                        console.error("❌ Logout Error:", error);
-                        alert(error.message);
-                    });
-            });
-        } else {
-            console.warn("⚠️ Logout button not found in DOM.");
-        }
-    });
+    if (logoutBtn) {
+        logoutBtn.addEventListener("click", function () {
+            auth.signOut()
+                .then(() => {
+                    console.log("✅ User Logged Out");
+                    alert("✅ Logged Out Successfully!");
+                    window.location.href = "/"; // Redirect to login page
+                })
+                .catch(error => {
+                    console.error("❌ Logout Error:", error);
+                    alert(error.message);
+                });
+        });
+    }
 
     // ✅ Handle Signup
     if (signupBtn) {
@@ -114,14 +108,12 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-
-   // ✅ Listen for Authentication Changes
+    // ✅ Listen for Authentication Changes
     auth.onAuthStateChanged(user => {
         const loginForm = document.getElementById("login-form");
         const userProfile = document.getElementById("user-profile");
         const userName = document.getElementById("user-name");
         const userEmail = document.getElementById("user-email");
-        const logoutBtn = document.getElementById("logout-btn");
 
         if (user) {
             console.log("✅ User is logged in:", user);
@@ -139,19 +131,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
             // Ensure logout button is visible
             if (logoutBtn) logoutBtn.style.display = "block";
-            
         } else {
             console.log("⚠️ No user is logged in.");
-            
+
             // Show login form and hide user profile
             if (loginForm) loginForm.style.display = "block";
             if (userProfile) userProfile.style.display = "none";
-            
+
             // Hide logout button
             if (logoutBtn) logoutBtn.style.display = "none";
         }
     });
-
 
     // ✅ Toggle Update Form Visibility
     if (toggleUpdateFormBtn) {
