@@ -33,6 +33,10 @@ def settings():
 def speech_test():
     return render_template('test.html')
 
+@app.route('/admin')
+def admin():
+    return render_template('admin.html')
+
 # API สำหรับดึงประโยคทดสอบ
 @app.route('/get-test-sentences', methods=['GET'])
 def get_test_sentences():

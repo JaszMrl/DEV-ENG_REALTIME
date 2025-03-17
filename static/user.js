@@ -1,8 +1,7 @@
-// ✅ Ensure Firebase is initialized only ONCE
 document.addEventListener("DOMContentLoaded", function () {
-    console.log("✅ Document is ready.");
+    console.log("✅ Document Loaded!");
 
-    // ✅ Check if Firebase has already been initialized
+    // ✅ Ensure Firebase is initialized
     if (!firebase.apps.length) {
         const firebaseConfig = {
             apiKey: "AIzaSyDX18_aJbcVXz3xcrQtxAL1WNcm7BO2U1k",
@@ -13,7 +12,6 @@ document.addEventListener("DOMContentLoaded", function () {
             appId: "1:46267452346:web:81fb68d5836e0532c4ab83",
             measurementId: "G-Y9KXDJ6NFD"
         };
-
         firebase.initializeApp(firebaseConfig);
         console.log("✅ Firebase initialized.");
     } else {
@@ -23,20 +21,83 @@ document.addEventListener("DOMContentLoaded", function () {
     // ✅ Initialize Firebase Services
     const auth = firebase.auth();
     const db = firebase.firestore();
-    const storage = firebase.storage();
 
-    console.log("✅ Firebase Services Initialized:", {
-        authLoaded: auth ? "✅ Yes" : "❌ No",
-        dbLoaded: db ? "✅ Yes" : "❌ No",
-        storageLoaded: storage ? "✅ Yes" : "❌ No"
-    });
+    console.log("✅ Firebase Services Loaded:", { auth, db });
 
-    // ✅ Ensure elements exist before adding event listeners
+    // ✅ Get Elements
     const loginBtn = document.getElementById("login-btn");
     const signupBtn = document.getElementById("signup-btn");
     const logoutBtn = document.getElementById("logout-btn");
-    const toggleUpdateFormBtn = document.getElementById("toggle-update-form");
+    const showSignupBtn = document.getElementById("show-signup");
+    const showLoginBtn = document.getElementById("show-login");
     const updateInfoBtn = document.getElementById("update-info-btn");
+
+    const loginForm = document.getElementById("login-form");
+    const signupForm = document.getElementById("signup-form");
+    const userProfile = document.getElementById("user-profile");
+
+    // ✅ Toggle Between Login & Signup Forms
+    if (showSignupBtn) {
+        showSignupBtn.addEventListener("click", function () {
+            console.log("🔄 Switching to Signup Form");
+            loginForm.style.display = "none";
+            signupForm.style.display = "block";
+        });
+    }
+
+    if (showLoginBtn) {
+        showLoginBtn.addEventListener("click", function () {
+            console.log("🔄 Switching to Login Form");
+            loginForm.style.display = "block";
+            signupForm.style.display = "none";
+        });
+    }
+
+    // ✅ Handle Sign Up
+    if (signupBtn) {
+        signupBtn.addEventListener("click", function () {
+            console.log("🚀 Sign-Up Button Clicked!");
+
+            const name = document.getElementById("signup-name").value.trim();
+            const email = document.getElementById("signup-email").value.trim();
+            const password = document.getElementById("signup-password").value.trim();
+
+            if (!name || !email || !password) {
+                alert("❌ Please fill all fields!");
+                return;
+            }
+
+            auth.createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    const user = userCredential.user;
+                    console.log("✅ User Created:", user);
+
+                    // ✅ Store User in Firestore
+                    return db.collection("users").doc(user.uid).set({
+                        fullName: name,
+                        email: email,
+                        isAdmin: false,
+                        gender: "",
+                        age: "",
+                        nationality: "",
+                        overallAccuracy: "0.00",
+                        streak: 0
+                    }).then(() => {
+                        console.log("✅ User Data Saved to Firestore");
+
+                        // ✅ Update Firebase Auth Profile
+                        return user.updateProfile({ displayName: name });
+                    }).then(() => {
+                        alert("🎉 Account Created Successfully! Please log in.");
+                        window.location.reload();
+                    });
+                })
+                .catch(error => {
+                    console.error("❌ Sign-Up Error:", error);
+                    alert(error.message);
+                });
+        });
+    }
 
     // ✅ Handle Login
     if (loginBtn) {
@@ -77,85 +138,27 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // ✅ Handle Signup
-    if (signupBtn) {
-        signupBtn.addEventListener("click", function () {
-            const name = document.getElementById("signup-name").value;
-            const email = document.getElementById("signup-email").value;
-            const password = document.getElementById("signup-password").value;
-
-            if (!name || !email || !password) {
-                alert("❌ Please fill all fields!");
-                return;
-            }
-
-            auth.createUserWithEmailAndPassword(email, password)
-                .then((userCredential) => {
-                    let user = userCredential.user;
-                    console.log("✅ User Created:", user);
-
-                    return user.updateProfile({
-                        displayName: name  // ✅ Set the name in Firebase Auth
-                    }).then(() => {
-                        alert("🎉 Account Created Successfully!");
-                        window.location.reload();
-                    });
-                })
-                .catch(error => {
-                    console.error("❌ Sign-Up Error:", error);
-                    alert(error.message);
-                });
-        });
-    }
-
-    // ✅ Listen for Authentication Changes
+    // ✅ Load User Data After Login
     auth.onAuthStateChanged(user => {
-        const loginForm = document.getElementById("login-form");
-        const userProfile = document.getElementById("user-profile");
-        const userName = document.getElementById("user-name");
-        const userEmail = document.getElementById("user-email");
-
         if (user) {
-            console.log("✅ User is logged in:", user);
+            console.log("✅ User Logged In:", user);
 
-            // Hide login form and show user profile
-            if (loginForm) loginForm.style.display = "none";
-            if (userProfile) userProfile.style.display = "block";
+            loginForm.style.display = "none";
+            signupForm.style.display = "none";
+            userProfile.style.display = "block";
 
-            // Show user data
-            if (userName) userName.textContent = user.displayName || "User";
-            if (userEmail) userEmail.textContent = user.email || "-";
+            document.getElementById("user-name").textContent = user.displayName || "User";
+            document.getElementById("user-email").textContent = user.email || "-";
 
-            // Load user data from Firestore
             loadUserData(user.uid);
-
-            // Ensure logout button is visible
-            if (logoutBtn) logoutBtn.style.display = "block";
         } else {
             console.log("⚠️ No user is logged in.");
 
-            // Show login form and hide user profile
-            if (loginForm) loginForm.style.display = "block";
-            if (userProfile) userProfile.style.display = "none";
-
-            // Hide logout button
-            if (logoutBtn) logoutBtn.style.display = "none";
+            loginForm.style.display = "block";
+            signupForm.style.display = "none";
+            userProfile.style.display = "none";
         }
     });
-
-    // ✅ Toggle Update Form Visibility
-    if (toggleUpdateFormBtn) {
-        toggleUpdateFormBtn.addEventListener("click", function () {
-            const updateForm = document.getElementById("update-info-container");
-            if (updateForm.style.display === "none" || updateForm.style.display === "") {
-                updateForm.style.display = "block";
-                toggleUpdateFormBtn.textContent = "🔽 Hide Form";
-            } else {
-                updateForm.style.display = "none";
-                toggleUpdateFormBtn.textContent = "✏️ Edit Profile";
-            }
-        });
-    }
 
     // ✅ Handle Profile Update
     if (updateInfoBtn) {
@@ -192,31 +195,22 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
     }
-});
 
-// ✅ Load User Data from Firestore
-function loadUserData(userId) {
-    const userRef = firebase.firestore().collection("users").doc(userId);
+    // ✅ Load User Data from Firestore
+    function loadUserData(userId) {
+        db.collection("users").doc(userId).get().then((doc) => {
+            if (doc.exists) {
+                let data = doc.data();
 
-    userRef.get().then((doc) => {
-        if (doc.exists) {
-            let data = doc.data();
+                document.getElementById("user-fullname").textContent = data.fullName || "-";
+                document.getElementById("user-gender").textContent = data.gender || "-";
+                document.getElementById("user-age").textContent = data.age || "-";
+                document.getElementById("user-nationality").textContent = data.nationality || "-";
 
-            document.getElementById("user-fullname").textContent = data.fullName || "-";
-            document.getElementById("user-gender").textContent = data.gender || "-";
-            document.getElementById("user-age").textContent = data.age || "-";
-            document.getElementById("user-nationality").textContent = data.nationality || "-";
-
-            if (data.profilePic) {
-                document.getElementById("user-photo").src = data.profilePic; // ✅ Show Profile Picture
+                console.log("✅ User Data Loaded:", data);
+            } else {
+                console.log("❌ No user data found.");
             }
-        } else {
-            console.log("❌ No user data found.");
-        }
-    }).catch(error => console.error("❌ Error fetching user data:", error));
-}
-
-// ✅ Debugging logs
-console.log("✅ Firebase App:", firebase.apps);
-console.log("✅ Firestore Instance:", firebase.firestore ? "Available" : "❌ Firestore NOT Available!");
-console.log("✅ Auth Instance:", firebase.auth ? "Available" : "❌ Auth NOT Available!");
+        }).catch(error => console.error("❌ Error fetching user data:", error));
+    }
+});

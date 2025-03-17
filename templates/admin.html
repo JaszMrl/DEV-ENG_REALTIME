@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <h1 id="loading-message">Loading...</h1> <!-- Shows while checking admin status -->
+
+    <div id="admin-dashboard" style="display: none;">
+        <h1>Admin Dashboard</h1>
+        <a href="/">Go to Dashboard</a>
+
+        <h2>Registered Users</h2>
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Accuracy (%)</th>
+                    <th>Streak</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="user-table"></tbody>
+        </table>
+
+        <!-- Analytics Chart -->
+        <h2>Pronunciation Accuracy Overview</h2>
+        <canvas id="accuracyChart"></canvas>
+    </div>
+
+    <script>
+        // ✅ Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyDX18_aJbcVXz3xcrQtxAL1WNcm7BO2U1k",
+            authDomain: "english-app-2ede3.firebaseapp.com",
+            projectId: "english-app-2ede3",
+            storageBucket: "english-app-2ede3.appspot.com",
+            messagingSenderId: "46267452346",
+            appId: "1:46267452346:web:81fb68d5836e0532c4ab83",
+            measurementId: "G-Y9KXDJ6NFD"
+        };
+
+        // ✅ Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // ✅ Check if the user is an admin
+        function checkAdmin() {
+    auth.onAuthStateChanged(user => {
+        if (!user) {
+            console.warn("🚫 No user is logged in.");
+            alert("Access Denied! You are not logged in.");
+            window.location.href = "/login"; // Redirect to login page
+            return;
+        }
+
+        console.log("✅ Logged-in User ID:", user.uid);
+
+        const userRef = db.collection("users").doc(user.uid);
+        
+        userRef.get().then(doc => {
+            if (!doc.exists) {
+                console.error("❌ No user document found in Firestore.");
+                alert("Access Denied! User record not found.");
+                window.location.href = "/";
+                return;
+            }
+
+            let userData = doc.data();
+            console.log("✅ Firestore User Data:", userData);
+
+            console.log("🔍 isAdmin Value:", userData.isAdmin, typeof userData.isAdmin);
+
+            if (userData.isAdmin === true) {
+                console.log("✅ Admin Access Granted");
+
+                let adminDashboard = document.getElementById("admin-dashboard");
+                if (adminDashboard) {
+                    adminDashboard.style.display = "block"; // ✅ Show admin panel
+                } else {
+                    console.warn("⚠️ Warning: #admin-dashboard element not found.");
+                }
+
+                // Hide loading message
+                let loadingMessage = document.getElementById("loading-message");
+                if (loadingMessage) {
+                    loadingMessage.style.display = "none";
+                }
+
+            } else {
+                alert("Access Denied! You are not an admin.");
+                window.location.href = "/";
+            }
+        }).catch(error => {
+            console.error("❌ Error checking admin status:", error);
+        });
+    });
+}
+
+        // ✅ Fetch users from Firestore and display them in the table
+        function loadUsers() {
+    db.collection("users").get().then((querySnapshot) => {
+        let userTable = document.getElementById("user-table");
+
+        if (!userTable) {
+            console.error("❌ #user-table not found in HTML.");
+            return;
+        }
+
+        userTable.innerHTML = ""; // Clear table before loading new users
+
+        if (querySnapshot.empty) {
+            console.warn("⚠️ No users found in Firestore.");
+            userTable.innerHTML = `<tr><td colspan="5">No users found.</td></tr>`;
+            return;
+        }
+
+        querySnapshot.forEach((doc) => {
+            let data = doc.data();
+            console.log("✅ User Loaded:", data);
+
+            let row = `
+                <tr>
+                    <td contenteditable="true" id="name-${doc.id}">${data.fullName || "N/A"}</td>
+                    <td>${data.email || "N/A"}</td>
+                    <td contenteditable="true" id="accuracy-${doc.id}">${data.overallAccuracy || "0.00"}</td>
+                    <td contenteditable="true" id="streak-${doc.id}">${data.streak || "0"}</td>
+                    <td>
+                        <button onclick="updateUser('${doc.id}')">💾 Save</button>
+                        <button onclick="deleteUser('${doc.id}')">❌ Remove</button>
+                    </td>
+                </tr>`;
+            userTable.innerHTML += row;
+        });
+    }).catch((error) => {
+        console.error("❌ Error loading users:", error);
+    });
+}
+document.addEventListener("DOMContentLoaded", loadUsers);
+
+        // ✅ Function to delete a user
+        function deleteUser(userId) {
+            if (confirm("Are you sure you want to delete this user?")) {
+                db.collection("users").doc(userId).delete().then(() => {
+                    alert("User deleted successfully!");
+                    loadUsers(); // Refresh the user list
+                }).catch((error) => {
+                    console.error("Error deleting user:", error);
+                });
+            }
+        }
+
+        function updateUser(userId) {
+    let updatedName = document.getElementById(`name-${userId}`).innerText;
+    let updatedAccuracy = parseFloat(document.getElementById(`accuracy-${userId}`).innerText);
+    let updatedStreak = parseInt(document.getElementById(`streak-${userId}`).innerText);
+
+    db.collection("users").doc(userId).update({
+        fullName: updatedName,
+        overallAccuracy: updatedAccuracy,
+        streak: updatedStreak
+    }).then(() => {
+        alert("User updated successfully!");
+        loadUsers(); // Refresh the user list
+    }).catch((error) => {
+        console.error("Error updating user:", error);
+    });
+}
+
+        // ✅ Run the admin check on page load
+        checkAdmin();
+    </script>
+</body>
+</html>

@@ -136,7 +136,7 @@
                 <h3>Current Level: <span id="current-level">Basic/Beginner</span></h3>
                 <p id="test-sentence">Click "Generate Sentence" to begin!</p>
                 <button id="generate-btn" onclick="generateSentence()">Generate Sentence</button>
-                <button id="start-speech-btn" onclick="startSpeechRecognition()" disabled>🎙️ Speak</button>
+                <button class="Start-timer" id="start-speech-btn" onclick="startSpeechRecognition()" disabled>🎙️ Speak</button>
                 <button id="stop-speech-btn" onclick="stopSpeechRecognition()" disabled>🛑 Stop</button>
 
                 <h2>Speech Test Result</h2>
@@ -163,6 +163,16 @@
         function goBackHome() {
             window.location.href = "/";
         }
+        const startButton = document.querySelector('.Start-timer');
+        startButton.addEventListener('click', function() {
+        // บันทึกเวลาเริ่มต้นหากยังไม่มีค่าใน localStorage
+        if (!localStorage.getItem('startTime')) {
+            const now = new Date();
+            localStorage.setItem('startTime', now);
+            alert('เวลาเริ่มต้นบันทึกแล้ว: ' + now);
+        } 
+        
+        });
     </script>
 
 </body>
