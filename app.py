@@ -37,6 +37,10 @@ def speech_test():
 def admin():
     return render_template('admin.html')
 
+@app.route('/forget-password')
+def forget_password():
+    return render_template('forget-password.html')
+
 # API สำหรับดึงประโยคทดสอบ
 @app.route('/get-test-sentences', methods=['GET'])
 def get_test_sentences():
