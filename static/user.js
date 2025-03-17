@@ -99,6 +99,28 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    // ✅ Handle Forgot Password
+    const forgotPasswordBtn = document.getElementById("forgot-password");
+
+    if (forgotPasswordBtn) {
+        forgotPasswordBtn.addEventListener("click", function () {
+            const email = prompt("Enter your email to reset password:");
+            
+            if (email) {
+                firebase.auth().sendPasswordResetEmail(email)
+                    .then(() => {
+                        alert("✅ Password reset email sent! Check your inbox.");
+                    })
+                    .catch(error => {
+                        console.error("❌ Error sending reset email:", error);
+                        alert(error.message);
+                    });
+            } else {
+                alert("⚠️ Please enter a valid email.");
+            }
+        });
+    }
+
     // ✅ Handle Login
     if (loginBtn) {
         loginBtn.addEventListener("click", function () {
@@ -175,7 +197,6 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     }
-
 
     // ✅ Handle Profile Update
     if (updateInfoBtn) {
