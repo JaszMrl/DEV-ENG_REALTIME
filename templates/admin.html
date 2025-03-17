@@ -25,6 +25,8 @@
                     <th>Email</th>
                     <th>Accuracy (%)</th>
                     <th>Streak</th>
+                    <th>Gender</th>
+                    <th>Nationality</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -55,7 +57,7 @@
 
         // ✅ Check if the user is an admin
         function checkAdmin() {
-    auth.onAuthStateChanged(user => {
+        auth.onAuthStateChanged(user => {
         if (!user) {
             console.warn("🚫 No user is logged in.");
             alert("Access Denied! You are not logged in.");
@@ -110,30 +112,27 @@
         function loadUsers() {
     db.collection("users").get().then((querySnapshot) => {
         let userTable = document.getElementById("user-table");
-
-        if (!userTable) {
-            console.error("❌ #user-table not found in HTML.");
-            return;
-        }
-
-        userTable.innerHTML = ""; // Clear table before loading new users
-
-        if (querySnapshot.empty) {
-            console.warn("⚠️ No users found in Firestore.");
-            userTable.innerHTML = `<tr><td colspan="5">No users found.</td></tr>`;
-            return;
-        }
+        userTable.innerHTML = ""; // Clear existing data
 
         querySnapshot.forEach((doc) => {
             let data = doc.data();
-            console.log("✅ User Loaded:", data);
-
             let row = `
                 <tr>
                     <td contenteditable="true" id="name-${doc.id}">${data.fullName || "N/A"}</td>
                     <td>${data.email || "N/A"}</td>
                     <td contenteditable="true" id="accuracy-${doc.id}">${data.overallAccuracy || "0.00"}</td>
                     <td contenteditable="true" id="streak-${doc.id}">${data.streak || "0"}</td>
+                    
+                    <td>
+                        <select id="gender-${doc.id}">
+                            <option value="Male" ${data.gender === "Male" ? "selected" : ""}>Male</option>
+                            <option value="Female" ${data.gender === "Female" ? "selected" : ""}>Female</option>
+                            <option value="Other" ${data.gender === "Other" ? "selected" : ""}>Other</option>
+                        </select>
+                    </td>
+                    
+                    <td contenteditable="true" id="nationality-${doc.id}">${data.nationality || "N/A"}</td>
+                    
                     <td>
                         <button onclick="updateUser('${doc.id}')">💾 Save</button>
                         <button onclick="deleteUser('${doc.id}')">❌ Remove</button>
@@ -141,10 +140,9 @@
                 </tr>`;
             userTable.innerHTML += row;
         });
-    }).catch((error) => {
-        console.error("❌ Error loading users:", error);
     });
 }
+
 document.addEventListener("DOMContentLoaded", loadUsers);
 
         // ✅ Function to delete a user
@@ -163,18 +161,23 @@ document.addEventListener("DOMContentLoaded", loadUsers);
     let updatedName = document.getElementById(`name-${userId}`).innerText;
     let updatedAccuracy = parseFloat(document.getElementById(`accuracy-${userId}`).innerText);
     let updatedStreak = parseInt(document.getElementById(`streak-${userId}`).innerText);
+    let updatedGender = document.getElementById(`gender-${userId}`).value;
+    let updatedNationality = document.getElementById(`nationality-${userId}`).innerText;
 
     db.collection("users").doc(userId).update({
         fullName: updatedName,
         overallAccuracy: updatedAccuracy,
-        streak: updatedStreak
+        streak: updatedStreak,
+        gender: updatedGender,
+        nationality: updatedNationality
     }).then(() => {
-        alert("User updated successfully!");
+        alert("✅ User updated successfully!");
         loadUsers(); // Refresh the user list
     }).catch((error) => {
-        console.error("Error updating user:", error);
+        console.error("❌ Error updating user:", error);
     });
 }
+
 
         // ✅ Run the admin check on page load
         checkAdmin();

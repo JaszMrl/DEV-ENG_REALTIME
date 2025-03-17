@@ -160,6 +160,23 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
+    // ✅ Handle Toggle for Update Profile Form
+    const toggleUpdateFormBtn = document.getElementById("toggle-update-form");
+    const updateInfoContainer = document.getElementById("update-info-container");
+
+    if (toggleUpdateFormBtn) {
+        toggleUpdateFormBtn.addEventListener("click", function () {
+            if (updateInfoContainer.style.display === "none" || updateInfoContainer.style.display === "") {
+                updateInfoContainer.style.display = "block"; // Show form
+                toggleUpdateFormBtn.textContent = "🔽 Hide Form"; // Change button text
+            } else {
+                updateInfoContainer.style.display = "none"; // Hide form
+                toggleUpdateFormBtn.textContent = "✏️ Edit Profile"; // Reset button text
+            }
+        });
+    }
+
+
     // ✅ Handle Profile Update
     if (updateInfoBtn) {
         updateInfoBtn.addEventListener("click", function () {
