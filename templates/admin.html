@@ -10,6 +10,102 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="/static/styles.css">
 </head>
+    <style>
+        body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 2rem;
+    background-color: #f9f9f9;
+    color: #333;
+}
+
+h1, h2 {
+    color: #222;
+}
+
+a {
+    text-decoration: none;
+    color: #4a90e2;
+    font-weight: bold;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    background-color: white;
+    box-shadow: 0 0 10px rgba(0,0,0,0.05);
+}
+
+th, td {
+    padding: 0.75rem 1rem;
+    border: 1px solid #ddd;
+    text-align: center;
+}
+
+th {
+    background-color: #f0f0f0;
+    font-weight: bold;
+}
+
+tr:hover {
+    background-color: #f9f9f9;
+}
+
+button {
+    padding: 6px 10px;
+    border: none;
+    border-radius: 5px;
+    margin: 2px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+button:hover {
+    opacity: 0.9;
+}
+
+button:first-child {
+    background-color: #4caf50;
+    color: white;
+}
+
+button:last-child {
+    background-color: #5f3332;
+    color: white;
+}
+
+select {
+    padding: 4px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+#admin-dashboard {
+    max-width: 1000px;
+    margin: auto;
+    background-color: #fff;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+#loading-message {
+    text-align: center;
+    padding: 3rem;
+    font-size: 1.5rem;
+}
+
+canvas {
+    margin-top: 2rem;
+    max-width: 100%;
+}
+    </style>
+
 <body>
     <h1 id="loading-message">Loading...</h1> <!-- Shows while checking admin status -->
 
@@ -18,6 +114,8 @@
         <a href="/">Go to Dashboard</a>
 
         <h2>Registered Users</h2>
+        <!-- 🔍 Search & Filter -->
+<input type="text" id="searchInput" placeholder="Search by name or email..." style="margin-bottom: 1rem; padding: 8px; width: 100%; max-width: 400px;">
         <table border="1">
             <thead>
                 <tr>
@@ -110,37 +208,95 @@
 
         // ✅ Fetch users from Firestore and display them in the table
         function loadUsers() {
-    db.collection("users").get().then((querySnapshot) => {
-        let userTable = document.getElementById("user-table");
-        userTable.innerHTML = ""; // Clear existing data
+    const searchInput = document.getElementById("searchInput");
+    const userTable = document.getElementById("user-table");
+    let allUsers = [];
 
-        querySnapshot.forEach((doc) => {
-            let data = doc.data();
-            let row = `
-                <tr>
-                    <td contenteditable="true" id="name-${doc.id}">${data.fullName || "N/A"}</td>
-                    <td>${data.email || "N/A"}</td>
-                    <td contenteditable="true" id="accuracy-${doc.id}">${data.overallAccuracy || "0.00"}</td>
-                    <td contenteditable="true" id="streak-${doc.id}">${data.streak || "0"}</td>
-                    
-                    <td>
-                        <select id="gender-${doc.id}">
-                            <option value="Male" ${data.gender === "Male" ? "selected" : ""}>Male</option>
-                            <option value="Female" ${data.gender === "Female" ? "selected" : ""}>Female</option>
-                            <option value="Other" ${data.gender === "Other" ? "selected" : ""}>Other</option>
-                        </select>
-                    </td>
-                    
-                    <td contenteditable="true" id="nationality-${doc.id}">${data.nationality || "N/A"}</td>
-                    
-                    <td>
-                        <button onclick="updateUser('${doc.id}')">💾 Save</button>
-                        <button onclick="deleteUser('${doc.id}')">❌ Remove</button>
-                    </td>
-                </tr>`;
-            userTable.innerHTML += row;
+    db.collection("users").get().then((querySnapshot) => {
+        allUsers = querySnapshot.docs.map((doc) => {
+            return { id: doc.id, ...doc.data() };
+        });
+
+        renderTable(allUsers);
+        renderChart(allUsers);
+
+        // 🔍 Search filter
+        searchInput.addEventListener("input", () => {
+            const keyword = searchInput.value.toLowerCase();
+            const filtered = allUsers.filter(u =>
+                (u.fullName || "").toLowerCase().includes(keyword) ||
+                (u.email || "").toLowerCase().includes(keyword)
+            );
+            renderTable(filtered);
+            renderChart(filtered);
         });
     });
+
+    function renderTable(users) {
+        userTable.innerHTML = "";
+        users.forEach((data) => {
+            const row = `
+            <tr>
+                <td contenteditable="true" id="name-${data.id}">${data.fullName || "N/A"}</td>
+                <td>${data.email || "N/A"}</td>
+                <td contenteditable="true" id="accuracy-${data.id}">${data.overallAccuracy || "0.00"}</td>
+                <td contenteditable="true" id="streak-${data.id}">${data.streak || "0"}</td>
+                <td>
+                    <select id="gender-${data.id}">
+                        <option value="Male" ${data.gender === "Male" ? "selected" : ""}>Male</option>
+                        <option value="Female" ${data.gender === "Female" ? "selected" : ""}>Female</option>
+                        <option value="Other" ${data.gender === "Other" ? "selected" : ""}>Other</option>
+                    </select>
+                </td>
+                <td contenteditable="true" id="nationality-${data.id}">${data.nationality || "N/A"}</td>
+                <td>
+                    <button onclick="updateUser('${data.id}')">💾 Save</button>
+                    <button onclick="deleteUser('${data.id}')">❌ Remove</button>
+                </td>
+            </tr>`;
+            userTable.innerHTML += row;
+        });
+    }
+
+    function renderChart(users) {
+        const ctx = document.getElementById("accuracyChart").getContext("2d");
+        if (window.accuracyChartInstance) {
+            window.accuracyChartInstance.destroy(); // Clear previous chart
+        }
+
+        const labels = users.map(u => u.fullName || "Unknown");
+        const data = users.map(u => parseFloat(u.overallAccuracy || 0));
+
+        window.accuracyChartInstance = new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: "Pronunciation Accuracy (%)",
+                    data: data,
+                    backgroundColor: "rgba(75, 192, 192, 0.6)",
+                    borderColor: "rgba(75, 192, 192, 1)",
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    title: {
+                        display: true,
+                        text: "Pronunciation Accuracy by User"
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+    }
 }
 
 document.addEventListener("DOMContentLoaded", loadUsers);
