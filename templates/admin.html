@@ -104,6 +104,51 @@ canvas {
     margin-top: 2rem;
     max-width: 100%;
 }
+.overview-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 2rem;
+    padding: 1rem;
+    background-color: #f0f4f8;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.stat-card {
+    flex: 1 1 220px;
+    background: #ffffff;
+    border-left: 5px solid #4a90e2;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.03);
+    transition: all 0.2s ease-in-out;
+}
+
+.stat-card:hover {
+    transform: scale(1.02);
+}
+
+.stat-card h3 {
+    margin-top: 0;
+    font-size: 1.1rem;
+    color: #444;
+}
+
+.stat-card p {
+    font-size: 1.4rem;
+    font-weight: bold;
+    margin: 0.5rem 0 0;
+    color: #111;
+}
+.section-title {
+    font-size: 1.5rem;
+    color: #222;
+    margin-top: 2.5rem;
+    margin-bottom: 1rem;
+    border-bottom: 2px solid #e0e0e0;
+    padding-bottom: 0.5rem;
+}
     </style>
 
 <body>
@@ -131,10 +176,10 @@ canvas {
             <tbody id="user-table"></tbody>
         </table>
 
-        <!-- Analytics Chart -->
-        <h2>Pronunciation Accuracy Overview</h2>
-        <canvas id="accuracyChart"></canvas>
-    </div>
+    <!-- Pronunciation Accuracy Overview -->
+    <h2 style="margin-top: 2rem;">📈 User Engagement & Performance Overview</h2>
+    <div id="overviewStats" class="overview-container"></div>
+
 
     <script>
         // ✅ Firebase Config
@@ -259,45 +304,44 @@ canvas {
     }
 
     function renderChart(users) {
-        const ctx = document.getElementById("accuracyChart").getContext("2d");
-        if (window.accuracyChartInstance) {
-            window.accuracyChartInstance.destroy(); // Clear previous chart
-        }
+    const overviewDiv = document.getElementById("overviewStats");
+    if (!overviewDiv) return;
 
-        const labels = users.map(u => u.fullName || "Unknown");
-        const data = users.map(u => parseFloat(u.overallAccuracy || 0));
+    const accuracies = users.map(u => parseFloat(u.overallAccuracy || 0));
+    const loginCounts = users.map(u => parseInt(u.loginCount || 0));
+    const testsTaken = users.map(u => parseInt(u.testsTaken || 0));
+    const testScores = users.map(u => parseFloat(u.averageTestScore || 0));
 
-        window.accuracyChartInstance = new Chart(ctx, {
-            type: "bar",
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: "Pronunciation Accuracy (%)",
-                    data: data,
-                    backgroundColor: "rgba(75, 192, 192, 0.6)",
-                    borderColor: "rgba(75, 192, 192, 1)",
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { display: false },
-                    title: {
-                        display: true,
-                        text: "Pronunciation Accuracy by User"
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 100
-                    }
-                }
+    const avg = (arr) => arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2) : "N/A";
+
+    const avgAccuracy = avg(accuracies);
+    const avgLogins = avg(loginCounts);
+    const avgTests = avg(testsTaken);
+    const avgScore = avg(testScores);
+
+    const summaryHTML = `
+        <div class="stat-card">
+            <h3>📊 Pronunciation Accuracy</h3>
+            <p>${avgAccuracy}%</p>
+        </div>
+        <div class="stat-card">
+            <h3>🔐 Average Logins</h3>
+            <p>${avgLogins}</p>
+        </div>
+        <div class="stat-card">
+            <h3>🧪 Tests Taken</h3>
+            <p>${avgTests}</p>
+        </div>
+        <div class="stat-card">
+            <h3>✅ Avg. Test Score</h3>
+            <p>${avgScore}%</p>
+        </div>
+    `;
+
+    overviewDiv.innerHTML = summaryHTML;
             }
-        });
-    }
-}
+  }
+
 
 document.addEventListener("DOMContentLoaded", loadUsers);
 
