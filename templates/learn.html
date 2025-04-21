@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Learn</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      background-color: #f7f7f7;
+    }
+
+    .app-container {
+      display: flex;
+    }
+
+    .sidebar {
+      background-color: #333;
+      color: white;
+      width: 250px;
+      height: 100vh;
+      padding: 20px;
+      position: fixed;
+    }
+
+    .sidebar nav ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .sidebar nav ul li {
+      margin-bottom: 20px;
+    }
+
+    .sidebar nav ul li a {
+      text-decoration: none;
+      color: white;
+      font-size: 1rem;
+      padding: 10px 15px;
+      display: block;
+      border-radius: 5px;
+      transition: background-color 0.3s, transform 0.2s;
+    }
+
+    .sidebar nav ul li a:hover,
+    .sidebar nav ul li a.active {
+      background-color: #3B82F6;
+      transform: translateX(5px);
+    }
+
+    .main-content {
+      flex-grow: 1;
+      margin-left: 250px;
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .main-header h1 {
+      font-size: 2rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .tabs {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .tabs button {
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .tabs button.active {
+      background-color: #0056b3;
+    }
+
+    .tab-content {
+      display: none;
+      width: 100%;
+      max-width: 1000px;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .lesson-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      justify-content: center;
+    }
+
+    .lesson-card {
+      background: #fff;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      text-align: left;
+      transition: transform 0.3s;
+    }
+
+    .lesson-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .lesson-card h3 {
+      margin: 0 0 10px;
+      font-size: 1.25rem;
+    }
+
+    .lesson-card p {
+      margin-bottom: 15px;
+      color: #555;
+    }
+
+    .lesson-card button {
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .lesson-card button:hover {
+      background-color: #0056b3;
+    }
+
+    .practice-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    .practice-controls input {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    @media (max-width: 768px) {
+      .app-container {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        width: 100%;
+        height: auto;
+        position: static;
+        text-align: center;
+      }
+
+      .main-content {
+        margin-left: 0;
+        padding: 20px;
+        align-items: center;
+      }
+
+      .tabs {
+        flex-direction: column;
+      }
+
+      .lesson-card,
+      .practice-controls {
+        width: 90%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <nav>
+        <ul>
+          <li><a href="{{ url_for('home') }}">Dashboard</a></li>
+          <li><a href="{{ url_for('user') }}">User</a></li>
+          <li><a href="{{ url_for('settings') }}">Settings</a></li>
+          <li><a href="{{ url_for('speech_test') }}">Speech Test</a></li>
+          <li><a href="{{ url_for('learn') }}">Learn</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <div class="main-header">
+        <h1>🎓 Learn</h1>
+      </div>
+
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('lessons')">📘 Lessons</button>
+        <button class="tab-btn" onclick="switchTab('practice')">🗣️ Practice</button>
+      </div>
+
+      <!-- Lessons Tab -->
+<div id="lessons" class="tab-content active">
+    <div class="lesson-grid">
+      <div class="lesson-card">
+        <h3>Lesson 1: Vowel Sounds</h3>
+        <p>Learn how to pronounce short and long vowels correctly.</p>
+        <a href="{{ url_for('lesson1') }}">
+            <button>Start</button>
+          </a>          
+      </div>
+      <div class="lesson-card">
+        <h3>Lesson 2: TH vs S</h3>
+        <p>Practice distinguishing between TH and S sounds.</p>
+        <button>Start</button>
+      </div>
+      <div class="lesson-card">
+        <h3>Lesson 3: R vs L</h3>
+        <p>Refine your pronunciation of R and L sounds.</p>
+        <button>Start</button>
+      </div>
+  
+      <!-- ✅ New Lessons -->
+      <div class="lesson-card">
+        <h3>Lesson 4: Ending Sounds</h3>
+        <p>Improve how you finish words like "cat", "walk", and "help".</p>
+        <button>Start</button>
+      </div>
+      <div class="lesson-card">
+        <h3>Lesson 5: Stress & Intonation</h3>
+        <p>Learn which syllables to emphasize for natural speech rhythm.</p>
+        <button>Start</button>
+      </div>
+    </div>
+  </div>
+
+      <!-- Practice Tab -->
+      <div id="practice" class="tab-content">
+        <div class="practice-controls">
+          <label for="customSentence">Type your own sentence:</label>
+          <input id="customSentence" placeholder="e.g., This is a test" />
+          <button onclick="playNativePractice()">🔊 Hear Native</button>
+          <button onclick="startPracticeSpeech()">🎤 Speak</button>
+          <audio id="nativePracticeAudio" preload="auto"></audio>
+          <p id="practice-feedback">Your accuracy will appear here...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      event.target.classList.add('active');
+    }
+
+    function playNativePractice() {
+      const text = document.getElementById("customSentence").value.trim();
+      if (!text) return alert("❌ Please enter a sentence first.");
+      fetch('/get_native_audio?text=' + encodeURIComponent(text))
+        .then(res => res.blob())
+        .then(blob => {
+          const audio = document.getElementById("nativePracticeAudio");
+          const url = URL.createObjectURL(blob);
+          audio.src = url;
+          audio.play();
+        });
+    }
+
+    function startPracticeSpeech() {
+      const text = document.getElementById("customSentence").value.trim();
+      if (!text) return alert("❌ Please enter a sentence first.");
+
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) return alert("Speech recognition not supported.");
+
+      const recognition = new SpeechRecognition();
+      recognition.lang = "en-US";
+      recognition.interimResults = false;
+      recognition.continuous = false;
+
+      recognition.onresult = (event) => {
+        const userSpeech = event.results[0][0].transcript;
+        fetch('/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            target_sentence: text,
+            user_speech: userSpeech,
+            strictness: 'medium'
+          })
+        })
+          .then(res => res.json())
+          .then(data => {
+            document.getElementById("practice-feedback").innerText = `✅ Accuracy: ${data.accuracy.toFixed(2)}%`;
+          })
+          .catch(err => {
+            console.error(err);
+            document.getElementById("practice-feedback").innerText = "❌ Error analyzing speech.";
+          });
+      };
+
+      recognition.start();
+    }
+  </script>
+</body>
+</html>

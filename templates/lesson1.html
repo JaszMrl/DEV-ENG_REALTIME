@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Lesson 1: Vowel Sounds</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f7f7f7;
+      margin: 0;
+      padding: 40px;
+      max-width: 800px;
+      margin-inline: auto;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+
+    .section {
+      margin-bottom: 30px;
+    }
+
+    .word-button {
+      display: inline-block;
+      margin: 5px;
+      padding: 10px 15px;
+      background: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .try-section input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    .try-section button {
+      margin-right: 10px;
+    }
+
+    .practice-list {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .practice-list li {
+      margin-bottom: 10px;
+    }
+
+    .practice-feedback {
+      font-weight: bold;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🎯 Lesson 1: Vowel Sounds</h1>
+  <p>Learn the difference between short and long vowels, such as the difference between “bit” and “beat”.</p>
+
+  <div class="section">
+    <h3>👂 Hear Examples</h3>
+    <button class="word-button" onclick="playWord('bit')">bit</button>
+    <button class="word-button" onclick="playWord('beat')">beat</button>
+    <button class="word-button" onclick="playWord('hat')">hat</button>
+    <button class="word-button" onclick="playWord('hate')">hate</button>
+  </div>
+
+  <div class="section try-section">
+    <h3>🎤 Try It Yourself</h3>
+    <input id="tryWord" placeholder="Enter a vowel word like 'bit' or 'beat'">
+    <button onclick="playNativeTry()">🔊 Hear</button>
+    <button onclick="startTrySpeech()">🎙️ Speak</button>
+    <p id="try-feedback" class="practice-feedback"></p>
+  </div>
+
+  <div class="section">
+    <h3>🧪 Practice Mini Quiz</h3>
+    <ul class="practice-list" id="quizList">
+      <!-- Quiz items will be injected here -->
+    </ul>
+  </div>
+
+  <script>
+    const quizWords = ['bit', 'beat', 'hat', 'hate'];
+    let currentQuizIndex = 0;
+
+    function playWord(word) {
+      fetch('/get_native_audio?text=' + word)
+        .then(res => res.blob())
+        .then(blob => {
+          const audio = new Audio(URL.createObjectURL(blob));
+          audio.play();
+        });
+    }
+
+    function playNativeTry() {
+      const word = document.getElementById("tryWord").value.trim();
+      if (!word) return alert("Enter a word first!");
+      playWord(word);
+    }
+
+    function startTrySpeech() {
+      const target = document.getElementById("tryWord").value.trim();
+      if (!target) return alert("Enter a word first!");
+
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+      recognition.onresult = (event) => {
+        const spoken = event.results[0][0].transcript.toLowerCase();
+        const feedback = document.getElementById("try-feedback");
+        if (spoken === target.toLowerCase()) {
+          feedback.textContent = `✅ Good job! You said: ${spoken}`;
+        } else {
+          feedback.textContent = `❌ Try again. You said: ${spoken}`;
+        }
+      };
+      recognition.start();
+    }
+
+    // Mini quiz section (basic version)
+    const quizList = document.getElementById('quizList');
+    quizWords.forEach(word => {
+      const li = document.createElement('li');
+      li.innerHTML = `
+        <strong>${word}</strong>
+        <button onclick="playWord('${word}')">🎧</button>
+        <button onclick="startQuizSpeech('${word}', this)">🎤</button>
+        <span class="practice-feedback"></span>
+      `;
+      quizList.appendChild(li);
+    });
+
+    function startQuizSpeech(expected, btn) {
+      const feedback = btn.nextElementSibling;
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+      recognition.onresult = (event) => {
+        const spoken = event.results[0][0].transcript.toLowerCase();
+        if (spoken === expected.toLowerCase()) {
+          feedback.textContent = "✅ Correct!";
+        } else {
+          feedback.textContent = `❌ You said: ${spoken}`;
+        }
+      };
+      recognition.start();
+    }
+  </script>
+
+</body>
+</html>

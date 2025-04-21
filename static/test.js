@@ -334,6 +334,33 @@ function loadUserStats(userId) {
     getTestScore(userId);
 }
 
+function playNativeCustom() {
+    const sentence = document.getElementById("test-sentence").textContent;
+    if (!sentence || sentence.includes("Generate")) {
+        alert("❌ Please generate a sentence first.");
+        return;
+    }
+
+    fetch('/get_native_audio?text=' + encodeURIComponent(sentence))
+        .then(res => res.blob())
+        .then(blob => {
+            const audio = document.getElementById("nativeAudio");
+            const url = URL.createObjectURL(blob);
+            audio.src = url;
+
+            // ⏯️ Wait until it's ready to play
+            audio.oncanplaythrough = () => {
+                audio.play().catch(err => {
+                    console.error("❌ Playback error:", err);
+                    alert("❌ Audio cannot be played. User interaction is required.");
+                });
+            };
+        })
+        .catch(error => {
+            console.error("❌ Error fetching audio:", error);
+        });
+}
+
 document.addEventListener("DOMContentLoaded", function () { 
     initializeSpeechRecognition();
     loadSentences();

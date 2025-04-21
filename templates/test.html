@@ -114,6 +114,24 @@
         margin-top: 20px;
         text-align: center;
     }
+
+    .audio-player {
+        width: 100%;
+        max-width: 300px;
+        margin: 10px auto;
+        display: block;
+        background: none;
+        border: none;
+        outline: none;
+        box-shadow: none;
+        filter: grayscale(0.2) brightness
+    }
+
+    #nativeAudio {
+    display: none;
+    }
+
+
 </style>
 
 <body>
@@ -125,16 +143,20 @@
                     <li><a href="{{ url_for('home') }}">Dashboard</a></li>
                     <li><a href="{{ url_for('user') }}">User</a></li>
                     <li><a href="{{ url_for('settings') }}">Settings</a></li>
-                    <li><a href="{{ url_for('speech_test') }}" class="active">Speech Test</a></li>
+                    <li><a href="{{ url_for('speech_test') }}">Speech Test</a></li>
+                    <li><a href="{{ url_for('learn') }}">Learn</a></li>
                 </ul>
-            </nav>
+            </nav>  
         </aside>
 
         <!-- ✅ Main Content -->
         <div class="main-content">
             <div class="test-container">
+
                 <h3>Current Level: <span id="current-level">Basic/Beginner</span></h3>
                 <p id="test-sentence">Click "Generate Sentence" to begin!</p>
+                <button onclick="playNativeCustom()">🔊 Play Audio</button>
+                <audio id="nativeAudio" preload="auto"></audio>
                 <button id="generate-btn" onclick="generateSentence()">Generate Sentence</button>
                 <button class="Start-timer" id="start-speech-btn" onclick="startSpeechRecognition()" disabled>🎙️ Speak</button>
                 <button id="stop-speech-btn" onclick="stopSpeechRecognition()" disabled>🛑 Stop</button>

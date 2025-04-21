@@ -246,8 +246,9 @@ body.dark-mode {
             <ul>
                 <li><a href="{{ url_for('home') }}">Dashboard</a></li>
                 <li><a href="{{ url_for('user') }}">User</a></li>
-                <li><a href="{{ url_for('settings') }}" class="active">Settings</a></li>
+                <li><a href="{{ url_for('settings') }}">Settings</a></li>
                 <li><a href="{{ url_for('speech_test') }}">Speech Test</a></li>
+                <li><a href="{{ url_for('learn') }}" class="{% if current_page == 'learn' %}active{% endif %}">Learn</a></li>
             </ul>
         </nav>
     </aside>

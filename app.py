@@ -1,10 +1,12 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, send_file
 import pronouncing
 import os
 import json
 import re
 from difflib import SequenceMatcher
 from Levenshtein import ratio
+from gtts import gTTS
+import tempfile
 
 app = Flask(__name__)
 
@@ -32,6 +34,26 @@ def settings():
 @app.route('/test')
 def speech_test():
     return render_template('test.html')
+
+@app.route('/learn')
+def learn():
+    return render_template('learn.html', current_page='learn')
+
+@app.route('/lesson1')
+def lesson1():
+    return render_template('lesson1.html')
+
+@app.route('/get_native_audio')
+def get_native_audio():
+    text = request.args.get('text', '')
+    if not text:
+        return jsonify({'error': 'No text provided'}), 400
+
+    tts = gTTS(text=text, lang='en')
+    temp_path = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3").name
+    tts.save(temp_path)
+
+    return send_file(temp_path, mimetype='audio/mpeg')
 
 @app.route('/admin')
 def admin():
