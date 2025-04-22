@@ -9,37 +9,44 @@ const firebaseConfig = {
     measurementId: "G-Y9KXDJ6NFD"
 };
 
-// ✅ Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
-const db = firebase.firestore();  // ✅ Add this line
+const db = firebase.firestore();
 
-
-// ✅ Initialize Variables
 let sentences = { basic: [], intermediateLow: [], intermediateHigh: [], advanced: [], native: [] };
 let levels = ["Basic/Beginner", "Intermediate Low", "Intermediate High", "Advanced", "Native/Fluent"];
 let currentLevelIndex = 0;
 let testCount = 0;
-const totalTests = 6;
 let totalScore = 0;
 let points = 0;
 let recognition = null;
 let usedSentences = {};
+let levelCorrectCount = 0;
+let levelSentenceCount = 0;
+let levelScoreHistory = [];
 
-// ✅ Load Sentences
 async function loadSentences() {
     try {
-        const response = await fetch('/get-test-sentences');
-        if (!response.ok) throw new Error(`Failed to fetch sentences: ${response.status}`);
-        sentences = await response.json();
-        console.log("✅ Sentences Loaded:", sentences);
+        const snapshot = await db.collection("sentences").get();
+
+        snapshot.forEach(doc => {
+            const level = doc.id.toLowerCase();  // e.g. "basic"
+            const data = doc.data();
+
+            if (Array.isArray(data.list)) {
+                sentences[level] = data.list;
+            } else {
+                console.warn(`⚠️ No sentence list found for level: ${level}`);
+            }
+        });
+
+        console.log("✅ Loaded sentences from Firebase:", sentences);
     } catch (error) {
-        console.error("❌ Error loading sentences:", error);
+        console.error("❌ Error loading sentences from Firebase:", error);
         document.getElementById("test-sentence").textContent = "Error loading sentences.";
     }
 }
 
-// ✅ Generate a New Sentence
 async function generateSentence() {
     if (!sentences || Object.keys(sentences).length === 0) {
         console.log("⚠️ Sentences not loaded yet. Fetching...");
@@ -61,11 +68,9 @@ async function generateSentence() {
     let testSentence = usedSentences[levelKey].shift();
     document.getElementById("test-sentence").textContent = testSentence;
 
-    // ✅ Enable "Speak" button
     document.getElementById("start-speech-btn").disabled = false;
 }
 
-// ✅ Initialize Speech Recognition
 function initializeSpeechRecognition() {
     if (!recognition) {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -110,24 +115,19 @@ function startSpeechRecognition() {
         return;
     }
 
-    // Ensure microphone permissions
     navigator.mediaDevices.getUserMedia({ audio: true })
         .then(() => {
-            console.log("✅ Microphone access granted.");
-            
             recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
             recognition.continuous = false;
             recognition.interimResults = false;
             recognition.lang = "en-US";
 
             recognition.onstart = function () {
-                console.log("🎙️ Speech Recognition Started");
                 document.getElementById("test-result").textContent = "Listening...";
                 document.getElementById("stop-speech-btn").disabled = false;
             };
 
             recognition.onspeechend = function () {
-                console.log("🛑 Speech ended, stopping recognition...");
                 recognition.stop();
             };
 
@@ -138,201 +138,131 @@ function startSpeechRecognition() {
             };
 
             recognition.onerror = function (event) {
-                console.error(`❌ Speech recognition error: ${event.error}`);
                 alert(`Error with speech recognition: ${event.error}`);
             };
 
             recognition.start();
         })
         .catch(error => {
-            console.error("❌ Microphone access blocked:", error);
-            alert("❌ Microphone access is blocked. Enable it in your browser settings.");
+            alert("❌ Microphone access is blocked.");
         });
 }
 
-        // ✅ Stop Speech Recognition
-        function stopSpeechRecognition() {
-            if (recognition) {
-                recognition.stop();
-                console.log("🛑 Speech recognition stopped.");
-            }
-            document.getElementById("test-result").textContent = "Speech recognition stopped.";
-            document.getElementById("stop-speech-btn").disabled = true;
+function stopSpeechRecognition() {
+    if (recognition) recognition.stop();
+    document.getElementById("test-result").textContent = "Speech recognition stopped.";
+    document.getElementById("stop-speech-btn").disabled = true;
 }
 
-// ✅ Function to Save Test Score in Firestore
-function saveTestScore(userId, score, level, accuracy) {
-    if (!userId) {
-        console.error("❌ Error: User ID is undefined.");
-        return;
-    }
-
-    const userRef = db.collection("users").doc(userId);
-
-    userRef.get().then((doc) => {
-        let userData = doc.exists ? doc.data() : {};
-
-        // ✅ Ensure all values are numbers before using them
-        let totalAccuracy = userData.totalAccuracy || 0;
-        let totalTests = userData.totalTests || 0;
-        let totalScore = userData.score || 0;
-
-        // ✅ Prevent division by zero
-        if (isNaN(totalAccuracy) || isNaN(totalTests) || isNaN(totalScore)) {
-            totalAccuracy = 0;
-            totalTests = 0;
-            totalScore = 0;
-        }
-
-        totalAccuracy += accuracy;
-        totalTests += 1;
-        totalScore += score;
-
-        let overallAccuracy = totalTests > 0 ? (totalAccuracy / totalTests).toFixed(2) : "0.00";
-        let normalizedScore = totalTests > 0 ? (totalScore / totalTests).toFixed(2) : "0.00";
-
-        userRef.set({
-            score: normalizedScore,
-            level: level,
-            totalAccuracy: totalAccuracy,
-            totalTests: totalTests,
-            overallAccuracy: overallAccuracy
-        }, { merge: true })
-        .then(() => console.log(`✅ Accuracy and score updated for ${userId}`))
-        .catch(error => console.error("❌ Error saving accuracy:", error));
-    });
-}
-
-// ✅ Function to Get User Score from Firestore
-function getTestScore(userId) {
-    if (!userId) {
-        console.error("❌ Error: User ID is undefined.");
-        return;
-    }
-
-    const userRef = db.collection("users").doc(userId);
-    userRef.get()
-        .then((doc) => {
-            if (doc.exists) {
-                let data = doc.data();
-                console.log(`✅ User Data:`, data);
-
-                let scoreElement = document.getElementById("user-score");
-                let levelElement = document.getElementById("user-level");
-                let accuracyElement = document.getElementById("user-accuracy");
-
-                if (scoreElement) scoreElement.textContent = data.score || "0.00";
-                else console.warn("⚠️ Warning: #user-score element not found.");
-
-                if (levelElement) levelElement.textContent = data.level || "Unknown";
-                else console.warn("⚠️ Warning: #user-level element not found.");
-
-                if (accuracyElement) accuracyElement.textContent = data.overallAccuracy ? `${data.overallAccuracy}%` : "0.00%";
-                else console.warn("⚠️ Warning: #user-accuracy element not found.");
-            } else {
-                console.log("❌ No test score found.");
-            }
-        })
-        .catch(error => console.error("❌ Error fetching score:", error));
-}
-
-// ✅ Analyze Speech and Update Firestore
-async function analyzeSpeech(targetSentence, userSpeech) {
+function analyzeSpeech(targetSentence, userSpeech) {
     const user = auth.currentUser;
-    if (!user) {
-        console.error("❌ No authenticated user. Cannot save score.");
-        return;
-    }
-
-    if (!targetSentence || !userSpeech) {
-        console.error("❌ Error: Empty target sentence or user speech.");
-        document.getElementById('test-result').textContent = "Error: No speech detected.";
-        return;
-    }
-
-    console.log(`🎯 Target: ${targetSentence} | 🎤 User: ${userSpeech}`);
+    if (!user || !targetSentence || !userSpeech) return;
 
     const userId = user.uid;
-    try {
-        let strictnessLevels = ["medium", "high", "very_high"];
-        let currentStrictness = strictnessLevels[currentLevelIndex] || "medium";
 
-        const response = await fetch('/analyze', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                target_sentence: targetSentence.trim(),
-                user_speech: userSpeech.trim(),
-                strictness: currentStrictness,
-                language: "en-US"
-            })
-        });
-
-        if (!response.ok) {
-            let errorMessage = await response.json();
-            throw new Error(errorMessage.error || "Failed to analyze pronunciation.");
-        }
-
-        const result = await response.json();
+    fetch('/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            target_sentence: targetSentence.trim(),
+            user_speech: userSpeech.trim(),
+            strictness: ["medium", "high", "very_high"][currentLevelIndex],
+            language: "en-US"
+        })
+    })
+    .then(res => res.json())
+    .then(result => {
         let accuracy = result.accuracy || 0;
         let level = levels[currentLevelIndex];
 
-        totalScore += accuracy;
-        testCount++;
+        if (accuracy >= 85) levelCorrectCount++;
+        levelSentenceCount++;
+        // ✅ Update score live after each sentence
+        let liveScore = (levelCorrectCount / levelSentenceCount) * 5;
+        document.getElementById('normalized-score').textContent = liveScore.toFixed(2);
+        document.getElementById('raw-score-detail').textContent = `(Correct: ${levelCorrectCount} / ${levelSentenceCount})`;        
 
-        if (accuracy >= 80) points++;
+        let progressBar = document.getElementById('level-progress');
+        if (progressBar && levelSentenceCount > 0) {
+            let levelKey = ["basic", "intermediateLow", "intermediateHigh", "advanced", "native"][currentLevelIndex];
+            let total = sentences[levelKey]?.length || 1;
+            progressBar.max = total;
+            progressBar.value = levelSentenceCount;
+        }
 
-        console.log(`✅ Accuracy: ${accuracy} | Points: ${points} | Test Count: ${testCount}`);
-        document.getElementById('points').textContent = points;
-
-        document.getElementById('test-result').innerHTML = `
+        document.getElementById("test-result").innerHTML = `
             <p><strong>Target Sentence:</strong> "${targetSentence}"</p>
             <p><strong>Your Speech:</strong> "${userSpeech}"</p>
             <p><strong>Pronunciation Accuracy:</strong> ${accuracy.toFixed(2)}%</p>
         `;
 
-        // ✅ Save updated score
-        saveTestScore(userId, totalScore, level, accuracy);
+        // ✅ Trigger score check when level is complete
+        let levelKey = ["basic", "intermediateLow", "intermediateHigh", "advanced", "native"][currentLevelIndex];
 
-        if (testCount >= totalTests) {
-            adjustLevel(userId);
-        }
-    } catch (error) {
+        setTimeout(() => {
+            if (usedSentences[levelKey] && usedSentences[levelKey].length === 0) {
+                evaluateLevelProgress(userId);
+            }
+        }, 100);  // small delay ensures counting is done before checking
+
+    })
+    .catch(error => {
         console.error("❌ Error analyzing speech:", error);
-        document.getElementById('test-result').textContent = "Error analyzing speech.";
-    }
+    });
+
+    document.getElementById('normalized-score').textContent = levelScore.toFixed(2);
+    document.getElementById('raw-score-detail').textContent = `(Correct: ${levelCorrectCount} / ${levelSentenceCount})`;
+
 }
 
-// ✅ Adjust User Level
-function adjustLevel(userId) {
-    console.log(`🔥 Checking Level-Up: Points: ${points}, Level: ${levels[currentLevelIndex]}`);
+function evaluateLevelProgress(userId) {
+    let levelScore = (levelCorrectCount / levelSentenceCount) * 5;
+    levelScore = parseFloat(levelScore.toFixed(2));
 
-    if (points >= 3 && currentLevelIndex < levels.length - 1) {
-        currentLevelIndex++;
-        let newLevel = levels[currentLevelIndex];
+    console.log("Updating score UI...");
+    document.getElementById('normalized-score').textContent = levelScore.toFixed(2);
+    document.getElementById('raw-score-detail').textContent = `(Correct: ${levelCorrectCount} / ${levelSentenceCount})`;
 
-        document.getElementById("current-level").textContent = newLevel;
-        alert(`🎉 You have leveled up to ${newLevel}!`);
+    const userRef = db.collection("users").doc(userId);
+    const levelName = levels[currentLevelIndex];
 
-        saveTestScore(userId, totalScore / totalTests, newLevel);
-        points = 0;
-        testCount = 0;
-        totalScore = 0;
-        usedSentences = {};
-        document.getElementById('points').textContent = points;
-    } else if (currentLevelIndex >= levels.length - 1) {
-        alert("🏆 You have reached the highest level! Keep practicing!");
+    userRef.set({
+        [`levelScores.${levelName}`]: levelScore
+    }, { merge: true }).then(() => {
+        console.log(`✅ Saved ${levelName} score: ${levelScore}`);
+    }).catch((error) => {
+        console.error("❌ Error saving level score:", error);
+    });
+
+    if (levelScore > 3.5) {
+        levelScoreHistory.push(levelScore);
+
+        if (levelScoreHistory.length >= 5) {
+            const total = levelScoreHistory.reduce((a, b) => a + b, 0);
+            alert(`🏆 All levels complete! Final Score: ${total.toFixed(2)} / 25`);
+        }
+
+        if (currentLevelIndex < levels.length - 1) {
+            currentLevelIndex++;
+            document.getElementById("current-level").textContent = levels[currentLevelIndex];
+        }
+    } else {
+        alert(`❌ You scored ${levelScore}/5. Please try again.`);
     }
+
+    // Reset state
+    levelCorrectCount = 0;
+    levelSentenceCount = 0;
+    points = 0;
+    testCount = 0;
+    usedSentences = {};
+    document.getElementById('points').textContent = points;
+
+    // ✅ Reset score display to default
+    document.getElementById('normalized-score').textContent = '0.00';
+    document.getElementById('raw-score-detail').textContent = '(Correct: 0 / 0)';
 }
 
-// ✅ Load User Data on Dashboard
-function loadUserStats(userId) {
-    if (!userId) {
-        console.error("❌ Error: User ID is undefined.");
-        return;
-    }
-    getTestScore(userId);
-}
 
 function playNativeCustom() {
     const sentence = document.getElementById("test-sentence").textContent;
@@ -347,41 +277,20 @@ function playNativeCustom() {
             const audio = document.getElementById("nativeAudio");
             const url = URL.createObjectURL(blob);
             audio.src = url;
-
-            // ⏯️ Wait until it's ready to play
-            audio.oncanplaythrough = () => {
-                audio.play().catch(err => {
-                    console.error("❌ Playback error:", err);
-                    alert("❌ Audio cannot be played. User interaction is required.");
-                });
-            };
-        })
-        .catch(error => {
-            console.error("❌ Error fetching audio:", error);
+            audio.oncanplaythrough = () => audio.play().catch(() => {
+                alert("❌ Audio cannot be played.");
+            });
         });
 }
 
-document.addEventListener("DOMContentLoaded", function () { 
+document.addEventListener("DOMContentLoaded", function () {
     initializeSpeechRecognition();
     loadSentences();
 
     auth.onAuthStateChanged(user => {
         if (user) {
-            const userId = user.uid;
-            console.log("✅ Logged-in User ID:", userId);
-
-            // ✅ Load user stats only if score elements exist
-            if (document.getElementById("user-score") && document.getElementById("user-level")) {
-                getTestScore(userId);
-            } else {
-                console.warn("⚠️ Score elements not found. Skipping score update.");
-            }
-
             document.getElementById("generate-btn")?.addEventListener("click", generateSentence);
-            document.getElementById("start-speech-btn")?.addEventListener("click", () => startSpeechRecognition(userId));
-        } else {
-            console.error("❌ No user logged in.");
+            document.getElementById("start-speech-btn")?.addEventListener("click", () => startSpeechRecognition(user.uid));
         }
     });
 });
-
