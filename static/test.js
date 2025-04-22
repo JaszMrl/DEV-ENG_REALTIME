@@ -30,7 +30,7 @@ async function loadSentences() {
         const snapshot = await db.collection("sentences").get();
 
         snapshot.forEach(doc => {
-            const level = doc.id.toLowerCase();  // e.g. "basic"
+            const level = doc.id;  
             const data = doc.data();
 
             if (Array.isArray(data.list)) {
@@ -236,17 +236,22 @@ function evaluateLevelProgress(userId) {
 
     if (levelScore > 3.5) {
         levelScoreHistory.push(levelScore);
-
+    
+        const levelName = levels[currentLevelIndex];
+        alert(`🎉 You passed ${levelName} with a score of ${levelScore}/5!`);
+    
         if (levelScoreHistory.length >= 5) {
             const total = levelScoreHistory.reduce((a, b) => a + b, 0);
             alert(`🏆 All levels complete! Final Score: ${total.toFixed(2)} / 25`);
         }
-
+    
         if (currentLevelIndex < levels.length - 1) {
             currentLevelIndex++;
             document.getElementById("current-level").textContent = levels[currentLevelIndex];
+            generateSentence();  // load next level's sentence
         }
-    } else {
+    }
+    else {
         alert(`❌ You scored ${levelScore}/5. Please try again.`);
     }
 
