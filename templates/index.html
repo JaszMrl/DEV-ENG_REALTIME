@@ -10,233 +10,243 @@
     <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-firestore-compat.js"></script>
-
-<style>
-    /* สไตล์พื้นฐาน */
+    <style>
+        /* ✅ Always hide reset timer button */
+        .Reset-timer {
+          display: none !important;
+        }
+      
+        /* สไตล์พื้นฐาน */
         @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
-        
+      
         @keyframes slideInLeft {
-            from {
-                opacity: 0;
-                transform: translateX(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
+          from {
+            opacity: 0;
+            transform: translateX(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
         }
-        
+      
         @keyframes zoomIn {
-            from {
-                opacity: 0;
-                transform: scale(0.9);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
+          from {
+            opacity: 0;
+            transform: scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
         }
-        
+      
         #welcome-message {
-            animation: fadeInUp 1s ease-in-out;
+          animation: fadeInUp 1s ease-in-out;
+          font-size: 1.5rem;
+          font-weight: 500;
+          text-align: center;
+          margin: 40px auto;
         }
-        
+      
         .dashboard-card {
-            background: linear-gradient(135deg, #3B82F6, #1E40AF);
-            color: white;
-            padding: 30px;
-            border-radius: 15px;
-            text-align: center;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease;
+          background: linear-gradient(135deg, #3B82F6, #1E40AF);
+          color: white;
+          padding: 30px;
+          border-radius: 15px;
+          text-align: center;
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+          transition: transform 0.3s ease;
         }
-        
+      
         .dashboard-card:nth-child(1) {
-            animation-delay: 0.3s;
+          animation-delay: 0.3s;
         }
+      
         .dashboard-card:nth-child(2) {
-            animation-delay: 0.6s;
+          animation-delay: 0.6s;
         }
+      
         .dashboard-card:nth-child(3) {
-            animation-delay: 0.9s;
+          animation-delay: 0.9s;
         }
-
+      
         body {
-            font-family: 'Poppins', sans-serif;
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            overflow-x: hidden; /* Prevent horizontal scrolling */
-}
-
+          font-family: 'Poppins', sans-serif;
+          width: 100%;
+          height: 100%;
+          margin: 0;
+          padding: 0;
+          overflow-x: hidden;
+        }
+      
         .app-container {
-            display: flex;
-            flex-direction: row;
-            height: 100vh;
-            overflow: auto;
+          display: flex;
+          flex-direction: row;
+          height: 100vh;
+          overflow: auto;
         }
-
+      
         .sidebar {
-            background-color: #333;
-            color: white;
-            width: 250px;
-            height: 100%;
-            padding: 20px;
-            position: fixed;
+          background-color: #333;
+          color: white;
+          width: 250px;
+          height: 100%;
+          padding: 20px;
+          position: fixed;
         }
-
+      
         .sidebar nav ul {
-            list-style: none;
-            padding: 0;
+          list-style: none;
+          padding: 0;
         }
-
+      
         .sidebar nav ul li {
-            margin-bottom: 20px;
+          margin-bottom: 20px;
         }
-
+      
         .sidebar nav ul li a {
-            text-decoration: none;
-            color: white;
-            font-size: 1rem;
-            padding: 10px 15px;
-            display: block;
-            border-radius: 5px;
-            transition: background-color 0.3s;
+          text-decoration: none;
+          color: white;
+          font-size: 1rem;
+          padding: 10px 15px;
+          display: block;
+          border-radius: 5px;
+          transition: background-color 0.3s;
         }
-
+      
         .sidebar nav ul li a:hover {
-            background-color: #3B82F6;
+          background-color: #3B82F6;
         }
-
+      
         .main-content {
-            flex-grow: 1;
-            padding: 20px;
-            margin-left: 250px; /* Space for the sidebar */
+          flex-grow: 1;
+          padding: 20px;
+          margin-left: 250px;
         }
-
+      
         .page {
-            display: none;
+          display: none;
         }
-
+      
         .page.active {
-            display: block;
+          display: block;
         }
-
+      
         /* สไตล์สำหรับอุปกรณ์มือถือ */
         @media (max-width: 768px) {
-        .app-container {
+          .app-container {
             flex-direction: column;
-            align-items: center; /* Centers all items */
-        }
-
-        .sidebar {
+            align-items: center;
+          }
+      
+          .sidebar {
             position: static;
             width: 100%;
             height: auto;
             padding: 10px;
             text-align: center;
-        }
-
-        .main-content {
-            margin-left: 0; /* Remove sidebar offset */
-            width: 100%; /* Ensure full width */
-            justify-content: center; /* Center content */
-            align-items: center; /* Center content */
+          }
+      
+          .main-content {
+            margin-left: 0;
+            width: 100%;
+            justify-content: center;
+            align-items: center;
             display: flex;
             flex-direction: column;
+          }
+      
+          .dashboard-card,
+          .lesson-card {
+            width: 90%;
+            max-width: 300px;
+          }
         }
-
-        .dashboard-card, .lesson-card {
-            width: 90%; /* Make sure cards take up proper width */
-            max-width: 300px; /* Prevent too wide */
-        }
-}
-    </style>
+      </style>      
 </head>
 
 <body>
-            <div class="app-container">
-                <!-- แถบด้านข้าง -->
-                 <aside class="sidebar">
-            <nav>
-                <ul>
-                    <li><a href="{{ url_for('home') }}">Dashboard</a></li>
-                    <li><a href="{{ url_for('user') }}">User</a></li>
-                    <li><a href="{{ url_for('settings') }}">Settings</a></li>
-                    <li><a href="{{ url_for('speech_test') }}">Speech Test</a></li>
-                    <li><a href="{{ url_for('learn') }}" class="{% if current_page == 'learn' %}active{% endif %}">Learn</a></li>
-                    <li id="admin-link" style="display: none;"><a href="/admin">Admin</a></li>
-                </ul>
-            </nav>
-        </aside>
-
-        <!-- เนื้อหาหลัก -->
-        <div class="main-content">
-            <!-- หน้าแดชบอร์ด -->
-            <div id="dashboard" class="page active">
-                <header></header>
-                <section>
-                    <h2 id="welcome-message">Welcome back!</h2>
-                    <div class="dashboard-cards">
-                        <div class="dashboard-card">
-                            <h3>📚 Lessons Completed</h3>
-                            <p>10</p>
-                        </div>
-                        <div class="dashboard-card">
-                            <h3>📊 Your Overall Accuracy: <span id="user-accuracy">0.00%</span></h3>
-                        </div>
-                        <div class="dashboard-card">
-                            <h3>🔥 Current Streak</h3>
-                            <span id="timer">00 วัน 00:00:00</span>
-                        </div>
-                        <div class="dashboard-card">
-                            <h3>🏆 Your Score: <span id="user-score">0</span></h3>
-                        </div>
-                        <div class="dashboard-card">
-                            <h3>🎯 Your Level: <span id="user-level">Basic/Beginner</span></h3>
-                        </div>
-                    </div>
-                </section>
+    <div class="app-container">
+      <aside class="sidebar">
+        <nav>
+          <ul>
+            <li><a href="{{ url_for('home') }}">Dashboard</a></li>
+            <li><a href="{{ url_for('user') }}">User</a></li>
+            <li><a href="{{ url_for('settings') }}">Settings</a></li>
+            <li><a href="{{ url_for('speech_test') }}">Speech Test</a></li>
+            <li><a href="{{ url_for('learn') }}" class="{% if current_page == 'learn' %}active{% endif %}">Learn</a></li>
+            <li id="admin-link" style="display: none;"><a href="/admin">Admin</a></li>
+          </ul>
+        </nav>
+      </aside>
+  
+      <div class="main-content">
+        <div id="dashboard" class="page active">
+          <header></header>
+          <section>
+            <div style="display: flex; justify-content: center; align-items: center; height: 120px;">
+              <h2 id="welcome-message">Welcome back!</h2>
             </div>
-            <button class="Reset-timer">รีเซ็ตเวลา</button>
-            <!-- ✅ Ensure that the Home section is separate -->
-            <div id="home" class="page">
-                <header><h1>Learning English</h1></header>
-                <section>
-                    <h2 id="welcome-message">Welcome back!</h2>
-                    <div class="lesson-section">
-                        <div class="lesson-card"><h3>Lesson 1</h3><p>Basic Vocabulary</p><button>Start</button></div>
-                        <div class="lesson-card"><h3>Lesson 2</h3><p>Common Phrases</p><button>Start</button></div>
-                        <div class="lesson-card"><h3>Lesson 3</h3><p>Grammar Rules</p><button>Start</button></div>
-                        <div class="lesson-card"><h3>Lesson 4</h3><p>Pronunciation</p><button>Start</button></div>
-                    </div>
-                </section>
-                <footer><button class="speech-btn" id="speech-btn" onclick="goToTestPage()">Speech</button></footer>
+            <div class="dashboard-cards">
+              <div class="dashboard-card">
+                <h3>📚 Lessons Completed</h3>
+                <p>10</p>
+              </div>
+              <div class="dashboard-card">
+                <h3>📊 Your Overall Accuracy: <span id="user-accuracy">0.00%</span></h3>
+              </div>
+              <div class="dashboard-card">
+                <h3>🔥 Current Streak</h3>
+                <span id="timer">00 วัน 00:00:00</span>
+              </div>
+              <div class="dashboard-card">
+                <h3>🏆 Your Score: <span id="user-score">0</span></h3>
+              </div>
+              <div class="dashboard-card">
+                <h3>🎯 Your Level: <span id="user-level">Basic/Beginner</span></h3>
+              </div>
             </div>
-        
-
-            <!-- หน้าตั้งค่า -->
-            <div id="settings" class="page">
-                <header><h1>Settings</h1></header>
-                <section>
-                    <h2>Language Preferences</h2>
-                    <form>
-                        <label><input type="radio" name="language" value="en" checked> English</label>
-                        <label><input type="radio" name="language" value="th"> Thai</label>
-                    </form>
-                </section>
-            </div>
+          </section>
         </div>
+  
+        <!-- Still present for logic, visually hidden -->
+        <button class="Reset-timer">รีเซ็ตเวลา</button>
+  
+        <div id="home" class="page">
+          <header><h1>Learning English</h1></header>
+          <section>
+            <h2 id="welcome-message">Welcome back!</h2>
+            <div class="lesson-section">
+              <div class="lesson-card"><h3>Lesson 1</h3><p>Basic Vocabulary</p><button>Start</button></div>
+              <div class="lesson-card"><h3>Lesson 2</h3><p>Common Phrases</p><button>Start</button></div>
+              <div class="lesson-card"><h3>Lesson 3</h3><p>Grammar Rules</p><button>Start</button></div>
+              <div class="lesson-card"><h3>Lesson 4</h3><p>Pronunciation</p><button>Start</button></div>
+            </div>
+          </section>
+          <footer><button class="speech-btn" id="speech-btn" onclick="goToTestPage()">Speech</button></footer>
+        </div>
+  
+        <div id="settings" class="page">
+          <header><h1>Settings</h1></header>
+          <section>
+            <h2>Language Preferences</h2>
+            <form>
+              <label><input type="radio" name="language" value="en" checked> English</label>
+              <label><input type="radio" name="language" value="th"> Thai</label>
+            </form>
+          </section>
+        </div>
+      </div>
     </div>
 <script>
     let startTime;
