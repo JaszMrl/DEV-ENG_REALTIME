@@ -5,7 +5,7 @@
   <title>Learn</title>
   <link rel="stylesheet" href="/static/styles.css">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <style>
+<style>
     html, body {
       height: 100%;
       margin: 0;
@@ -188,86 +188,186 @@
         </div>
       </div>
 
-      <!-- Practice -->
-      <div id="practice" class="tab-content">
-        <div class="lesson-grid">
-          <div class="lesson-card">
-            <h3>Free Practice</h3>
-            <p>Record and assess your pronunciation freely.</p>
-            <a href="{{ url_for('speech_test') }}"><button>Try Now</button></a>
-          </div>
+<!-- Practice Section -->
+<div id="practice" class="tab-content">
+  <div class="lesson-grid">
 
-          <div class="lesson-card">
-            <h3>Custom Sentence Practice</h3>
-            <p>Enter any sentence and test how well you can pronounce it.</p>
-            <input type="text" id="customSentence" placeholder="Type your sentence here">
-            <br><br>
-            <button onclick="playNativePractice()">🔊 Hear Native</button>
-            <button onclick="startPracticeSpeech()">🎤 Speak</button>
-            <p id="practice-feedback" style="margin-top: 10px;"></p>
-            <audio id="nativePracticeAudio" hidden></audio>
-          </div>
-        </div>
-      </div>
+    <!-- ✅ Daily Challenge -->
+    <div class="lesson-card">
+      <h3>Daily Pronunciation Challenge</h3>
+      <p>Try saying today’s sentence and get real-time feedback!</p>
+      <div id="dailySentence">"Practice makes perfect."</div>
+      <br>
+      <button onclick="playDailySentence()">🔊 Hear Native</button>
+      <button onclick="speakDailySentence()">🎤 Speak</button>
+      <p id="daily-feedback" style="margin-top: 10px;"></p>
+      <p id="daily-listening" style="color: #3B82F6; font-weight: 600;"></p>
+      <p id="daily-spoken-text" style="font-style: italic; color: #666;"></p>
+      <audio id="dailyAudio" hidden></audio>
     </div>
+
+    <!-- ✅ Custom Sentence Practice -->
+    <div class="lesson-card">
+      <h3>Custom Sentence Practice</h3>
+      <p>Enter your own sentence and check your pronunciation.</p>
+      <input type="text" id="customSentence" placeholder="Type your sentence here">
+      <br><br>
+      <button onclick="playNativePractice()">🔊 Hear Native</button>
+      <button onclick="startPracticeSpeech()">🎤 Speak</button>
+      <p id="practice-feedback" style="margin-top: 10px;"></p>
+      <p id="listening-indicator" style="color: #3B82F6; font-weight: 600;"></p>
+      <p id="custom-spoken-text" style="font-style: italic; color: #666;"></p>
+      <audio id="nativePracticeAudio" hidden></audio>
+    </div>
+
   </div>
+</div>
 
-  <!-- JS -->
-  <script>
-    function switchTab(tabId) {
-      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-      document.querySelectorAll('.tab').forEach(btn => btn.classList.remove('active'));
-      document.getElementById(tabId).classList.add('active');
-      event.target.classList.add('active');
+<script>
+  // 🌟 Switch Tabs
+  function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    event.target.classList.add('active');
+  }
+
+  // 📅 Daily Sentence (1 per day)
+  const dailySentences = [
+    "Practice makes perfect.",
+    "Never stop learning.",
+    "Consistency is the key to success.",
+    "Speaking clearly boosts confidence."
+  ];
+
+  function getTodayKey() {
+    return new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  }
+
+  function getDailySentence() {
+    const storedDate = localStorage.getItem("daily-date");
+    const today = getTodayKey();
+
+    if (storedDate === today && localStorage.getItem("daily-sentence")) {
+      return localStorage.getItem("daily-sentence");
     }
 
-    function playNativePractice() {
-      const text = document.getElementById("customSentence").value.trim();
-      if (!text) return alert("❌ Please enter a sentence first.");
-      fetch('/get_native_audio?text=' + encodeURIComponent(text))
-        .then(res => res.blob())
-        .then(blob => {
-          const audio = document.getElementById("nativePracticeAudio");
-          const url = URL.createObjectURL(blob);
-          audio.src = url;
-          audio.play();
-        });
-    }
+    const random = dailySentences[Math.floor(Math.random() * dailySentences.length)];
+    localStorage.setItem("daily-date", today);
+    localStorage.setItem("daily-sentence", random);
+    return random;
+  }
 
-    function startPracticeSpeech() {
-      const text = document.getElementById("customSentence").value.trim();
-      if (!text) return alert("❌ Please enter a sentence first.");
+  const todaySentence = getDailySentence();
+  document.getElementById("dailySentence").innerText = `"${todaySentence}"`;
 
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) return alert("Speech recognition not supported.");
+  // 🔊 Play Native Audio (Daily)
+  function playDailySentence() {
+    fetch(`/get_native_audio?text=${encodeURIComponent(todaySentence)}`)
+      .then(res => res.blob())
+      .then(blob => {
+        const audio = document.getElementById("dailyAudio");
+        audio.src = URL.createObjectURL(blob);
+        audio.play();
+      });
+  }
 
-      const recognition = new SpeechRecognition();
-      recognition.lang = "en-US";
-      recognition.interimResults = false;
+  // 🎤 Speak (Daily)
+  function speakDailySentence() {
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = "en-US";
 
-      recognition.onresult = (event) => {
-        const userSpeech = event.results[0][0].transcript;
-        fetch('/analyze', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            target_sentence: text,
-            user_speech: userSpeech,
-            strictness: 'medium'
-          })
+    const indicator = document.getElementById("daily-listening");
+    indicator.innerText = "🎤 Listening...";
+
+    recognition.onresult = function (event) {
+      indicator.innerText = "";
+      const spoken = event.results[0][0].transcript;
+
+      document.getElementById("daily-spoken-text").innerText = `🗣️ You said: "${spoken}"`;
+
+      fetch('/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          target_sentence: todaySentence,
+          user_speech: spoken,
+          strictness: 'medium'
         })
-          .then(res => res.json())
-          .then(data => {
-            document.getElementById("practice-feedback").innerText = `✅ Accuracy: ${data.accuracy.toFixed(2)}%`;
-          })
-          .catch(err => {
-            console.error(err);
-            document.getElementById("practice-feedback").innerText = "❌ Error analyzing speech.";
-          });
-      };
+      })
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById("daily-feedback").innerText = `✅ Accuracy: ${data.accuracy.toFixed(2)}%`;
+        })
+        .catch(err => {
+          document.getElementById("daily-feedback").innerText = "❌ Error analyzing speech.";
+          console.error(err);
+        });
+    };
 
-      recognition.start();
-    }
-  </script>
-</body>
-</html>
+    recognition.onerror = () => indicator.innerText = "";
+    recognition.onend = () => indicator.innerText = "";
+
+    recognition.start();
+  }
+
+  // 🔊 Native Playback for Custom Sentence
+  function playNativePractice() {
+    const text = document.getElementById("customSentence").value.trim();
+    if (!text) return alert("❌ Please enter a sentence first.");
+
+    fetch(`/get_native_audio?text=${encodeURIComponent(text)}`)
+      .then(res => res.blob())
+      .then(blob => {
+        const audio = document.getElementById("nativePracticeAudio");
+        audio.src = URL.createObjectURL(blob);
+        audio.play();
+      });
+  }
+
+  // 🎤 Speak (Custom)
+  function startPracticeSpeech() {
+    const text = document.getElementById("customSentence").value.trim();
+    if (!text) return alert("❌ Please enter a sentence first.");
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return alert("Speech recognition not supported.");
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+
+    const indicator = document.getElementById("listening-indicator");
+    indicator.innerText = "🎤 Listening...";
+
+    recognition.onresult = (event) => {
+      indicator.innerText = "";
+      const userSpeech = event.results[0][0].transcript;
+
+      document.getElementById("custom-spoken-text").innerText = `🗣️ You said: "${userSpeech}"`;
+
+      fetch('/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          target_sentence: text,
+          user_speech: userSpeech,
+          strictness: 'medium'
+        })
+      })
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById("practice-feedback").innerText = `✅ Accuracy: ${data.accuracy.toFixed(2)}%`;
+        })
+        .catch(err => {
+          console.error(err);
+          document.getElementById("practice-feedback").innerText = "❌ Error analyzing speech.";
+        });
+    };
+
+    recognition.onerror = () => indicator.innerText = "";
+    recognition.onend = () => indicator.innerText = "";
+
+    recognition.start();
+  }
+</script>
