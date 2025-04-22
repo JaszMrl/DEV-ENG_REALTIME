@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Lesson 3: R vs L</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      background-color: #f7f7f7;
+    }
+    .app-container {
+      display: flex;
+    }
+    .sidebar {
+      background-color: #333;
+      color: white;
+      width: 250px;
+      height: 100vh;
+      padding: 20px;
+      position: fixed;
+    }
+    .sidebar nav ul {
+      list-style: none;
+      padding: 0;
+    }
+    .sidebar nav ul li {
+      margin-bottom: 20px;
+    }
+    .sidebar nav ul li a {
+      text-decoration: none;
+      color: white;
+      font-size: 1rem;
+      padding: 10px 15px;
+      display: block;
+      border-radius: 5px;
+      transition: background-color 0.3s, transform 0.2s;
+    }
+    .sidebar nav ul li a:hover,
+    .sidebar nav ul li a.active {
+      background-color: #3B82F6;
+      transform: translateX(5px);
+    }
+    .main-content {
+      flex-grow: 1;
+      margin-left: 250px;
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-sizing: border-box;
+    }
+    .lesson-container {
+      width: 100%;
+      max-width: 800px;
+      padding: 0 20px;
+      box-sizing: border-box;
+    }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+    .section {
+      margin-bottom: 30px;
+    }
+    .word-button {
+      display: inline-block;
+      margin: 5px;
+      padding: 10px 15px;
+      background: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .try-section input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    .try-section button {
+      margin-right: 10px;
+    }
+    #listening-indicator {
+      display: none;
+      font-weight: bold;
+      color: #007BFF;
+      margin-top: 10px;
+      animation: glow 1.2s ease-in-out infinite alternate;
+    }
+    @keyframes glow {
+      from {
+        text-shadow: 0 0 5px #007BFF, 0 0 10px #007BFF;
+      }
+      to {
+        text-shadow: 0 0 10px #33aaff, 0 0 20px #33aaff;
+      }
+    }
+    .practice-feedback {
+      font-weight: bold;
+      margin-top: 5px;
+    }
+    #next-quiz-btn {
+      margin-top: 10px;
+    }
+    @media (max-width: 768px) {
+      .app-container {
+        flex-direction: column;
+      }
+      .sidebar {
+        width: 100%;
+        height: auto;
+        position: static;
+        text-align: center;
+      }
+      .main-content {
+        margin-left: 0;
+        padding: 20px;
+        align-items: center;
+      }
+      .lesson-container {
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <nav>
+        <ul>
+          <li><a href="{{ url_for('home') }}">Dashboard</a></li>
+          <li><a href="{{ url_for('user') }}">User</a></li>
+          <li><a href="{{ url_for('settings') }}">Settings</a></li>
+          <li><a href="{{ url_for('speech_test') }}">Speech Test</a></li>
+          <li><a href="{{ url_for('learn') }}" class="active">Learn</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <div class="main-content">
+      <div class="lesson-container">
+        <h1>👄 Lesson 3: R vs L</h1>
+        <p>Learn to distinguish between “R” and “L” sounds in English — like “right” vs “light” and “road” vs “load”.</p>
+
+        <div class="section">
+          <h3>👂 Hear Examples</h3>
+          <button class="word-button" onclick="playWord('right')">right</button>
+          <button class="word-button" onclick="playWord('light')">light</button>
+          <button class="word-button" onclick="playWord('road')">road</button>
+          <button class="word-button" onclick="playWord('load')">load</button>
+        </div>
+
+        <div class="section try-section">
+          <h3>🎤 Try It Yourself</h3>
+          <input id="tryWord" placeholder="Enter a word like 'right' or 'light'">
+          <button onclick="playNativeTry()">🔊 Hear</button>
+          <button onclick="startTrySpeech()">🎙️ Speak</button>
+          <p id="listening-indicator">🎙️ Now Listening… Speak clearly.</p>
+          <p id="try-feedback" class="practice-feedback"></p>
+        </div>
+
+        <div class="section" id="quiz-section">
+          <h3>🧪 Practice Mini Quiz</h3>
+          <div id="quiz-card">
+            <p><strong>Word <span id="quiz-num">1</span>/5:</strong> <span id="quiz-word">right</span></p>
+            <button onclick="playCurrentQuizWord()">🔊 Hear</button>
+            <button onclick="startQuizSpeech()">🎤 Speak</button>
+            <p id="quiz-listening-indicator" style="display:none; font-weight: bold; color: #007BFF;">🎙️ Now Listening… Speak clearly.</p>
+            <p id="quiz-feedback" class="practice-feedback"></p>
+            <button id="next-quiz-btn" onclick="nextQuizWord()" style="display: none;">➡️ Next</button>
+          </div>
+        </div>
+
+        <div class="section" style="text-align: center; margin-top: 40px;">
+          <a href="{{ url_for('learn') }}" style="
+              display: inline-block;
+              background-color: #3B82F6;
+              color: white;
+              padding: 10px 20px;
+              border-radius: 6px;
+              text-decoration: none;
+              font-weight: 500;
+              transition: background-color 0.3s ease;
+          ">⬅️ Back to Lessons</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const allQuizWords = [
+      "right", "light", "road", "load", "rice", "lice", "rip", "lip", "rat", "lat",
+      "read", "lead", "rake", "lake", "row", "low", "red", "led", "rain", "lane"
+    ];
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    const quizWords = shuffle([...allQuizWords]).slice(0, 5);
+    let quizIndex = 0;
+
+    function playWord(word) {
+      fetch('/get_native_audio?text=' + word)
+        .then(res => res.blob())
+        .then(blob => {
+          const audio = new Audio(URL.createObjectURL(blob));
+          audio.play();
+        });
+    }
+
+    function playNativeTry() {
+      const word = document.getElementById("tryWord").value.trim();
+      if (!word) return alert("Enter a word first!");
+      playWord(word);
+    }
+
+    function startTrySpeech() {
+      const target = document.getElementById("tryWord").value.trim();
+      const indicator = document.getElementById("listening-indicator");
+      if (!target) return alert("Enter a word first!");
+
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+
+      indicator.style.display = 'block';
+
+      recognition.onresult = (event) => {
+        const spoken = event.results[0][0].transcript.toLowerCase().trim().replace(/[.,!?]/g, "");
+        const feedback = document.getElementById("try-feedback");
+        indicator.style.display = 'none';
+
+        if (spoken === target.toLowerCase()) {
+          feedback.textContent = `✅ Good job! You said: ${spoken}`;
+        } else {
+          feedback.textContent = `❌ Try again. You said: ${spoken}`;
+        }
+      };
+
+      recognition.onerror = () => {
+        indicator.style.display = 'none';
+      };
+
+      recognition.onend = () => {
+        indicator.style.display = 'none';
+      };
+
+      recognition.start();
+    }
+
+    function loadQuizWord() {
+      const word = quizWords[quizIndex];
+      document.getElementById('quiz-word').textContent = word;
+      document.getElementById('quiz-num').textContent = quizIndex + 1;
+      document.getElementById('quiz-feedback').textContent = '';
+      document.getElementById('next-quiz-btn').style.display = 'none';
+    }
+
+    function playCurrentQuizWord() {
+      const word = quizWords[quizIndex];
+      playWord(word);
+    }
+
+    function startQuizSpeech() {
+      const expected = quizWords[quizIndex];
+      const feedback = document.getElementById('quiz-feedback');
+      const indicator = document.getElementById('quiz-listening-indicator');
+
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+
+      indicator.style.display = 'block';
+
+      recognition.onresult = (event) => {
+        const spoken = event.results[0][0].transcript.toLowerCase().trim().replace(/[.,!?]/g, "");
+        const expectedClean = expected.toLowerCase().trim();
+
+        if (spoken === expectedClean) {
+          feedback.textContent = "✅ Correct!";
+        } else {
+          feedback.textContent = `❌ You said: ${spoken}`;
+        }
+
+        indicator.style.display = 'none';
+        document.getElementById('next-quiz-btn').style.display = 'inline-block';
+      };
+
+      recognition.onerror = () => {
+        indicator.style.display = 'none';
+        feedback.textContent = "⚠️ Could not recognize speech.";
+        document.getElementById('next-quiz-btn').style.display = 'inline-block';
+      };
+
+      recognition.onend = () => {
+        indicator.style.display = 'none';
+      };
+
+      recognition.start();
+    }
+
+    function nextQuizWord() {
+      quizIndex++;
+      if (quizIndex >= quizWords.length) {
+        document.getElementById('quiz-card').innerHTML = "<h4>🎉 Great job! You've completed the quiz.</h4>";
+      } else {
+        loadQuizWord();
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', loadQuizWord);
+  </script>
+</body>
+</html>

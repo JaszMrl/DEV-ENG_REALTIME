@@ -1,458 +1,263 @@
-/* General Styles */
-body {
-    margin: 0;
-    padding: 0;
-    font-family: 'Poppins', sans-serif;
-    background-color: #f7f7f7;
-    height: 100vh;
-    width: 100vw; /* Ensure it fills the screen */
-    overflow-x: hidden; /* Prevent horizontal scrolling */
+/* ======= GLOBAL RESET ======= */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-/* App Container */
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Poppins', sans-serif;
+  background-color: #f7f7f7;
+  height: 100%;
+  overflow-x: hidden;
+}
+
+/* ======= LAYOUT ======= */
 .app-container {
-    width: 100%;
-    max-width: 100%;
-    height: 100vh;
-    display: flex;
-    overflow: hidden;
+  display: flex;
+  height: 100%;
+  width: 100%;
 }
 
-/* Sidebar */
+/* ======= SIDEBAR ======= */
 .sidebar {
-    background-color: #333;
-    color: white;
-    width: 250px;
-    height: 100vh; /* Ensures full height */
-    padding: 20px 0; /* Remove top padding */
-    position: fixed;
-    top: 0; /* Fix to the top of the screen */
-    left: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: start;
+  width: 250px;
+  background-color: #333;
+  color: white;
+  padding: 20px 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
 }
 
 .sidebar nav ul {
-    list-style: none; /* Remove bullet points */
-    padding: 0;
-    margin: 0;
-    width: 100%;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
 }
 
 .sidebar nav ul li {
-    margin: 15px 0; /* Space between links */
-    width: 100%; /* Make each link fill the sidebar's width */
+  margin: 15px 0;
+  width: 100%;
 }
 
 .sidebar nav ul li a {
-    text-decoration: none; /* Remove underline from links */
-    color: #ffffff; /* White link text */
-    font-size: 1.1rem; /* Slightly larger text for readability */
-    padding: 10px 20px; /* Add padding inside links */
-    display: block; /* Ensure the link is a block element */
-    border-radius: 8px; /* Rounded corners for links */
-    transition: background 0.3s ease, transform 0.3s ease; /* Smooth hover effect */
+  text-decoration: none;
+  color: white;
+  font-size: 1.1rem;
+  padding: 10px 20px;
+  display: block;
+  border-radius: 8px;
+  font-weight: 400;
+  transition: background 0.3s ease, transform 0.3s ease;
+  box-sizing: border-box;
 }
 
 .sidebar nav ul li a:hover {
-    background-color: #3B82F6; /* Brighter blue for hover */
-    transform: translateX(5px); /* Slight shift on hover */
+  background-color: #3B82F6;
+  transform: translateX(5px);
 }
 
 .sidebar nav ul li a.active {
-    background-color: #60A5FA; /* Highlight the active link */
-    font-weight: 600; /* Make the active link bold */
-    transform: translateX(5px);
+  background-color: #60A5FA;
+  font-weight: 600;
+  transform: translateX(5px);
 }
 
+/* Footer inside sidebar (optional) */
 .sidebar .footer {
-    margin-top: auto; /* Push the footer to the bottom */
-    font-size: 0.9rem;
-    color: #d1d5db; /* Light gray text */
-    text-align: center;
-    padding-top: 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.2); /* Subtle border above footer */
+  margin-top: auto;
+  font-size: 0.9rem;
+  color: #d1d5db;
+  text-align: center;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-/* Main Content */
+/* ======= MAIN CONTENT ======= */
 .main-content {
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    margin-left: 250px;
-    height: 100vh;
-    padding: 20px;
-    transition: margin-left 0.3s ease-in-out;
+  margin-left: 250px;
+  flex-grow: 1;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  box-sizing: border-box;
 }
 
-
-
-.page {
-    display: none;
-    flex-grow: 1;
-    width: 100%;
-    min-height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    padding: 20px;
-}
-
-
-
-/* Page Visibility */
-.page, .mode-page {
-    display: none;
-}
-
-.page.active, .mode-page.active {
-    display: block;
-}
-
-
+/* ======= DASHBOARD GRIDS ======= */
 .dashboard-cards {
-    display: flex;
-    justify-content: center; /* Centers cards horizontally */
-    align-items: center; /* Centers cards vertically */
-    gap: 40px; /* Add space between cards */
-    flex-wrap: wrap; /* Allow cards to wrap if needed */
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto; /* Center horizontally */
-}
-
-
-.dashboard-card {
-    background: #f8f8f8;
-    padding: 30px; /* Increase padding */
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    text-align: center;
-    min-width: 250px; /* Adjust min width */
-    flex: 1;
-    max-width: 350px; /* Adjust max width */
-}
-
-
-/* Header */
-header {
-    color: white;
-    text-align: center;
-    padding: 30px 0;
-    width: 100%;
-    margin: 0;
-    border-radius: 10px;
-}
-
-header .logo {
-    display: flex;
-    align-items: center;
-    gap: 10px; /* Space between logo icon and text */
-    font-size: 1.8rem; /* Larger font for the logo */
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-header .logo i {
-    font-size: 2rem; /* Larger icon */
-    color: #FFD700; /* Gold for a contrasting highlight */
-}
-
-header nav {
-    display: flex;
-    gap: 30px; /* Space between navigation links */
-}
-
-header nav a {
-    text-decoration: none; /* Remove underline from links */
-    color: white; /* White text */
-    font-size: 1rem;
-    font-weight: 500;
-    padding: 10px 15px;
-    border-radius: 5px;
-    transition: background 0.3s, transform 0.2s; /* Smooth transition for hover effects */
-}
-
-header nav a:hover {
-    background: rgba(255, 255, 255, 0.2); /* Transparent white background */
-    transform: translateY(-3px); /* Slight upward shift on hover */
-}
-
-header .cta-buttons {
-    display: flex;
-    gap: 15px;
-}
-
-header .cta-buttons .btn-primary {
-    background: #FFD700; /* Gold CTA for attention */
-    color: #1E3A8A; /* Contrast with the background */
-    padding: 10px 20px;
-    font-weight: 600;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background 0.3s, transform 0.3s;
-}
-
-header .cta-buttons .btn-primary:hover {
-    background: #FFC107; /* Slightly lighter gold */
-    transform: scale(1.05); /* Enlarge slightly on hover */
-}
-
-header .cta-buttons .btn-secondary {
-    background: transparent;
-    color: white;
-    padding: 10px 20px;
-    border: 2px solid white; /* White border for contrast */
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background 0.3s, color 0.3s, transform 0.3s;
-}
-
-header .cta-buttons .btn-secondary:hover {
-    background: white; /* Invert background and text on hover */
-    color: #1E3A8A;
-    transform: scale(1.05); /* Enlarge slightly on hover */
-}
-
-/* Buttons */
-button, .speech-btn, .lesson-card button {
-    padding: 10px 20px;
-    background-color: #007BFF;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.3s ease;
-}
-
-button:hover, .speech-btn:hover, .lesson-card button:hover {
-    background-color: #0056b3;
-    transform: scale(1.05);
-}
-
-.speech-btn {
-    padding: 15px 30px;
-    font-size: 1.2rem;
-    margin: 20px auto;
-    display: block;
-    border-radius: 10px;
-}
-
-/* Lesson Section */
-.lesson-section {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 20px;
-    padding: 20px;
-    overflow-y: auto;
-    flex-grow: 1;
+    margin-top: 30px;
+    width: 100%;
+    max-width: 1000px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  
+  .dashboard-card {
+    background: linear-gradient(135deg, #3B82F6, #1E40AF);
+    color: white;
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+    animation: fadeInUp 0.8s ease-in-out forwards;
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  
+  .dashboard-card:hover {
+    transform: scale(1.03);
+  }
+  
+  .dashboard-card:nth-child(1) {
+    animation-delay: 0.2s;
+  }
+  .dashboard-card:nth-child(2) {
+    animation-delay: 0.4s;
+  }
+  .dashboard-card:nth-child(3) {
+    animation-delay: 0.6s;
+  }
+  .dashboard-card:nth-child(4) {
+    animation-delay: 0.8s;
+  }
+  .dashboard-card:nth-child(5) {
+    animation-delay: 1s;
+  }
+  
+
+/* ======= TABS ======= */
+.tabs {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.tab {
+  padding: 10px 20px;
+  margin: 0 10px;
+  background-color: #eee;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.tab.active {
+  background-color: #3B82F6;
+  color: white;
+}
+
+.tab-content {
+  display: none;
+  width: 100%;
+  max-width: 1000px;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* ======= LESSON GRID ======= */
+.lesson-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-top: 10px;
 }
 
 .lesson-card {
-    background-color: white;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    padding: 15px;
-    text-align: center;
-    transition: transform 0.3s;
+  background-color: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  text-align: center;
+  transition: 0.3s;
+  opacity: 0;
+  transform: scale(0.95);
+  animation: fadeInUp 0.5s forwards ease-in-out;
 }
 
 .lesson-card:hover {
-    transform: translateY(-5px);
+  transform: translateY(-5px);
 }
 
-.lesson-card h2 {
-    font-size: 1.3rem;
-    color: #007BFF;
+.lesson-card h2,
+.lesson-card h3 {
+  font-size: 1.3rem;
+  color: #007BFF;
 }
 
 .lesson-card p {
-    font-size: 1rem;
-    color: #333;
+  font-size: 1rem;
+  color: #333;
 }
 
-
-/* Animations */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
+.lesson-card button {
+  margin-top: 10px;
+  background-color: #3B82F6;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
 }
 
-@keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateX(-20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
+.lesson-card button:hover {
+  background-color: #2563eb;
+  transform: scale(1.05);
 }
 
-/* Fade-In Animation for Pages */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
+.lesson-card input {
+  margin-top: 10px;
+  padding: 8px;
+  width: 90%;
+  border-radius: 6px;
+  border: 1px solid #ccc;
 }
 
-/* Slide-In Animation */
-@keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateX(-20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
+/* ======= BUTTONS ======= */
+button, .speech-btn {
+  padding: 10px 20px;
+  background-color: #007BFF;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.3s ease;
 }
 
-/* Dropdown Fade Animation */
-@keyframes dropdownFade {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+button:hover, .speech-btn:hover {
+  background-color: #0056b3;
+  transform: scale(1.05);
 }
 
-/* Modal Fade-Slide Animation */
-@keyframes fadeSlideIn {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Zoom-In Animation */
-@keyframes zoomIn {
-    from {
-        opacity: 0;
-        transform: scale(0.9);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-/* Fade-In-Up Animation */
+/* ======= ANIMATIONS ======= */
 @keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px) scale(0.9);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
-
-/* Slide-Up Animation */
-@keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Dropdown Animation */
-.afs {
+  from {
     opacity: 0;
-    transform: translateY(-10px);
-    animation: dropdownFade 1s ease-out forwards;
+    transform: translateY(20px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
-/* Audio Player Slide-In */
-.audio-player-container {
-    opacity: 0;
-    transform: translateX(-20px);
-    animation: slideIn 1s ease-in-out forwards;
-    animation-delay: 0.5s;
+/* Optional utility */
+.hidden {
+  display: none;
 }
-
-/* Modal Fade-Slide-In */
-.modal {
-    animation: fadeSlideIn 0.5s ease forwards;
-}
-
-/* Lesson Cards Staggered Fade-In */
-.lesson-card {
-    opacity: 0;
-    transform: scale(0.9);
-    animation: fadeInUp 0.8s ease-in-out forwards;
-}
-
-.lesson-card:nth-child(1) {
-    animation-delay: 0.2s;
-}
-
-.lesson-card:nth-child(2) {
-    animation-delay: 0.4s;
-}
-
-.lesson-card:nth-child(3) {
-    animation-delay: 0.6s;
-}
-
-.lesson-card:nth-child(4) {
-    animation-delay: 0.8s;
-}
-
-/* Header Zoom-In */
-header h1 {
-    font-size: 2rem;
-    text-align: center;
-    margin-top: 20px;
-    width: 100%;
-}
-
-#welcome-message {
-    text-align: center;
-    font-size: 1.5rem;
-    font-weight: 600;
-    width: 100%;
-    margin-top: 20px;
-}
-
-
-/* Subheader Slide-In */
-header h2 {
-    opacity: 0;
-    transform: translateX(-20px);
-    animation: slideIn 1s ease-out forwards;
-    animation-delay: 0.5s;
-}
-
-/* Footer Slide-Up */
-footer {
-    opacity: 0;
-    transform: translateY(20px);
-    animation: slideUp 1s ease-out forwards;
-    animation-delay: 1s;
-}
-

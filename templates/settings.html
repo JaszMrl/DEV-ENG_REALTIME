@@ -6,6 +6,7 @@
     <title>Settings</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <link rel="stylesheet" href="/static/styles.css">
     <style>
         body {
             margin: 0;
@@ -117,42 +118,43 @@ body.dark-mode {
         }
 
         .sidebar {
-            background-color: #333;
-            color: white;
-            width: 250px;
-            height: 100vh;
-            padding: 20px;
-            position: fixed;
-            transition: background 0.3s ease;
-        }
+  background-color: #333;
+  color: white;
+  width: 250px;
+  height: 100vh;
+  padding: 20px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  box-sizing: border-box;
+}
 
-        .dark-mode .sidebar {
-            background-color: #222;
-        }
+.sidebar nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
 
-        .sidebar nav ul {
-            list-style: none;
-            padding: 0;
-        }
+.sidebar nav ul li {
+  margin-bottom: 20px;
+}
 
-        .sidebar nav ul li {
-            margin-bottom: 20px;
-        }
+.sidebar nav ul li a {
+  color: white;
+  text-decoration: none;
+  font-size: 1rem;
+  padding: 10px 15px;
+  display: block;
+  border-radius: 5px;
+  transition: background-color 0.3s, transform 0.2s;
+}
 
-        .sidebar nav ul li a {
-            text-decoration: none;
-            color: white;
-            font-size: 1rem;
-            padding: 10px 15px;
-            display: block;
-            border-radius: 5px;
-            transition: background-color 0.3s, transform 0.2s;
-        }
+.sidebar nav ul li a:hover,
+.sidebar nav ul li a.active {
+  background-color: #3B82F6;
+  transform: translateX(5px);
+}
 
-        .sidebar nav ul li a:hover {
-            background-color: #3B82F6;
-            transform: translateX(5px);
-        }
 
         .main-content {
             flex-grow: 1;
@@ -241,17 +243,20 @@ body.dark-mode {
     </style>
 </head>
 <body>
-    <aside class="sidebar">
-        <nav>
-            <ul>
-                <li><a href="{{ url_for('home') }}">Dashboard</a></li>
-                <li><a href="{{ url_for('user') }}">User</a></li>
-                <li><a href="{{ url_for('settings') }}">Settings</a></li>
-                <li><a href="{{ url_for('speech_test') }}">Speech Test</a></li>
-                <li><a href="{{ url_for('learn') }}" class="{% if current_page == 'learn' %}active{% endif %}">Learn</a></li>
-            </ul>
-        </nav>
-    </aside>
+<!-- Sidebar -->
+<aside class="sidebar">
+    <nav>
+      <ul>
+        <li><a href="{{ url_for('home') }}">Dashboard</a></li>
+        <li><a href="{{ url_for('user') }}">User</a></li>
+        <li><a href="{{ url_for('settings') }}">Settings</a></li>
+        <li><a href="{{ url_for('speech_test') }}">Speech Test</a></li>
+        <li><a href="{{ url_for('learn') }}" class="{% if current_page == 'learn' %}active{% endif %}">Learn</a></li>
+        <li id="admin-link" style="display: none;"><a href="/admin">Admin</a></li>
+      </ul>
+    </nav>
+  </aside>
+  
 
     <div class="main-content">
         <div class="content">
