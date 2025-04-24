@@ -49,10 +49,11 @@ async function loadSentences() {
 }
 
 async function generateSentence() {
-    const user = auth.currentUser;
-    if (!user) return;
+    // 🧽 Hide the score summary box if visible
+    const resultBox = document.getElementById("test-result-summary");
+    if (resultBox) resultBox.style.display = "none";
 
-    const userId = user.uid;
+    const user = auth.currentUser;
     const levelKey = ["basic", "intermediateLow", "intermediateHigh", "advanced", "native"][currentLevelIndex];
 
     // If all done, don't allow more
@@ -64,29 +65,23 @@ async function generateSentence() {
 
     // Fetch or reuse
     if (!usedSentences[levelKey]) {
-        const userRef = db.collection("users").doc(userId);
-        const userDoc = await userRef.get();
-        const saved = userDoc.data()?.levelQuestions?.[levelKey];
+        const fullSet = sentences[levelKey];
+        if (!fullSet || fullSet.length < 10) {
+            document.getElementById("test-sentence").textContent = "❌ Not enough sentences for this level.";
+            return;
+        }
 
-        if (saved && Array.isArray(saved) && saved.length === 10) {
-            usedSentences[levelKey] = [...saved];
-        } else {
-            const fullSet = sentences[levelKey];
-            if (!fullSet || fullSet.length < 10) {
-                document.getElementById("test-sentence").textContent = "❌ Not enough sentences for this level.";
-                return;
-            }
+        const selected = [...fullSet].sort(() => Math.random() - 0.5).slice(0, 10);
+        usedSentences[levelKey] = [...selected];
 
-            const selected = [...fullSet].sort(() => Math.random() - 0.5).slice(0, 10);
-            usedSentences[levelKey] = [...selected];
-
+        if (user) {
+            const userRef = db.collection("users").doc(user.uid);
             await userRef.set({
                 [`levelQuestions.${levelKey.replaceAll('.', '_')}`]: selected
             }, { merge: true });
         }
     }
 
-    // Show first question, but don’t shift yet
     const remaining = usedSentences[levelKey];
     if (!remaining || remaining.length === 0) {
         document.getElementById("test-sentence").textContent = "✅ You've completed all 10 questions!";
@@ -94,10 +89,10 @@ async function generateSentence() {
         return;
     }
 
+    // Show the next sentence
     document.getElementById("test-sentence").textContent = remaining[0];
     document.getElementById("start-speech-btn").disabled = false;
 }
-
 
 function initializeSpeechRecognition() {
     if (!recognition) {
@@ -155,8 +150,22 @@ function startSpeechRecognition() {
                 document.getElementById("stop-speech-btn").disabled = false;
             };
 
+            let silenceTimer;
+            recognition.onstart = function () {
+                document.getElementById("test-result").textContent = "Listening...";
+                document.getElementById("stop-speech-btn").disabled = false;
+
+                // Start fallback timeout
+                silenceTimer = setTimeout(() => recognition.stop(), 5000);
+            };
+
             recognition.onspeechend = function () {
-                recognition.stop();
+                if (silenceTimer) clearTimeout(silenceTimer);
+                silenceTimer = setTimeout(() => recognition.stop(), 2500);
+            };
+
+            recognition.onend = function () {
+                clearTimeout(silenceTimer);
             };
 
             recognition.onresult = function (event) {
@@ -184,10 +193,10 @@ function stopSpeechRecognition() {
 
 function analyzeSpeech(targetSentence, userSpeech) {
     const user = auth.currentUser;
-    if (!user || !targetSentence || !userSpeech) return;
-
-    const userId = user.uid;
+    const userId = user?.uid || null;
     const levelKey = ["basic", "intermediateLow", "intermediateHigh", "advanced", "native"][currentLevelIndex];
+
+    if (!targetSentence || !userSpeech) return;
 
     // 🛑 Stop if already done all 10
     if (levelSentenceCount >= 10 || !usedSentences[levelKey] || usedSentences[levelKey].length === 0) {
@@ -210,13 +219,11 @@ function analyzeSpeech(targetSentence, userSpeech) {
         const accuracy = result.accuracy || 0;
         const totalSentences = 10;
 
-        // Shift the question only after speaking
         usedSentences[levelKey].shift();
 
         if (accuracy >= 85) levelCorrectCount++;
         levelSentenceCount++;
 
-        // Update UI
         document.getElementById("test-result").innerHTML = `
             <p><strong>Target Sentence:</strong> "${targetSentence}"</p>
             <p><strong>Your Speech:</strong> "${userSpeech}"</p>
@@ -232,13 +239,10 @@ function analyzeSpeech(targetSentence, userSpeech) {
             progressBar.value = levelSentenceCount;
         }
 
-        // ✅ End logic
+        // ✅ Only logged-in users get progress saved
         if (levelSentenceCount >= 5 && (levelCorrectCount / totalSentences) * 5 >= 3.5) {
             evaluateLevelProgress(userId);
-            return;
-        }
-
-        if (levelSentenceCount === totalSentences) {
+        } else if (levelSentenceCount === totalSentences) {
             evaluateLevelProgress(userId);
         }
     })
@@ -274,42 +278,93 @@ function evaluateLevelProgress(userId) {
         [`levelScores.${levelName}`]: levelScore
     }, { merge: true });
 
-    // ✅ Check pass condition
+    showLevelSummary(levelScore); // ✅ show summary
+
+    // ✅ No auto-hide. No auto-next. Let user click button to continue.
+
     if (levelScore >= 3.5) {
         levelScoreHistory.push(levelScore);
-        alert(`🎉 You passed ${levelName} with a score of ${levelScore}/5!`);
 
         if (levelScoreHistory.length >= 5) {
             const total = levelScoreHistory.reduce((a, b) => a + b, 0);
             const finalScore = parseFloat(total.toFixed(2));
-            alert(`🏆 All levels complete! Final Score: ${finalScore} / 25`);
+            showFinalScore(finalScore);
             userRef.set({ score: finalScore, level: "Completed" }, { merge: true });
         }
 
         if (currentLevelIndex < levels.length - 1) {
-            // 🟢 Move to next level
-            currentLevelIndex++;
-            document.getElementById("current-level").textContent = levels[currentLevelIndex];
-
-            // 🔄 Reset for new level
-            levelCorrectCount = 0;
-            levelSentenceCount = 0;
-            usedSentences = {};
-
-            if (document.getElementById('points')) {
-                document.getElementById('points').textContent = points;
-            }
-
-            if (scoreDisplay) scoreDisplay.textContent = '0.00';
-            if (detailDisplay) detailDisplay.textContent = '(Correct: 0 / 0)';
-
-            // ❌ Remove old questions so new ones get generated
+            // 🟢 Let "next-level-btn" control progression, don't call generateSentence here
             db.collection("users").doc(userId).update({
                 [`levelQuestions.${levelKey}`]: firebase.firestore.FieldValue.delete()
             });
-
-            generateSentence();
         }
+        }
+    }
+
+function hideLevelSummary() {
+    const box = document.getElementById("test-result-summary");
+    if (box) box.style.display = "none";
+}
+
+function showLevelSummary(score) {
+    const box = document.getElementById("test-result-summary");
+    const title = document.getElementById("result-title");
+    const comment = document.getElementById("result-comment");
+    const scoreText = document.getElementById("result-score");
+    const nextBtn = document.getElementById("next-level-btn");
+
+    box.style.display = "block";
+    scoreText.textContent = `Your Score: ${score.toFixed(2)} / 5`;
+
+    if (score >= 4.5) {
+        title.textContent = "🌟 Excellent!";
+        comment.textContent = "You're sounding like a native speaker!";
+    } else if (score >= 3.5) {
+        title.textContent = "✅ Passed!";
+        comment.textContent = "Great job! You're ready for the next level.";
+    } else {
+        title.textContent = "❌ Not Passed";
+        comment.textContent = "Keep practicing — you’ll improve in no time!";
+    }
+
+    // ✅ Show button only if user passed and has another level
+    if (score >= 3.5 && currentLevelIndex < levels.length - 1) {
+        nextBtn.style.display = "inline-block";
+    } else {
+        nextBtn.style.display = "none";
+    }
+}
+
+
+function nextLevel() {
+    hideLevelSummary();
+    document.getElementById("next-level-btn").style.display = "none";
+
+    currentLevelIndex++;
+    document.getElementById("current-level").textContent = levels[currentLevelIndex];
+
+    levelCorrectCount = 0;
+    levelSentenceCount = 0;
+    usedSentences = {};
+
+    if (document.getElementById('points')) {
+        document.getElementById('points').textContent = points;
+    }
+
+    document.getElementById("normalized-score").textContent = '0.00';
+    document.getElementById("raw-score-detail").textContent = '(Correct: 0 / 0)';
+
+    generateSentence();
+}
+
+
+function showFinalScore(scoreOutOf25) {
+    const box = document.getElementById("final-score-summary");
+    const text = document.getElementById("final-score-text");
+
+    if (box && text) {
+        box.style.display = "block";
+        text.textContent = `Your Final Score: ${scoreOutOf25} / 25`;
     }
 }
 
