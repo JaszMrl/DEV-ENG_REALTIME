@@ -13,6 +13,16 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 const MAX_QUESTIONS_PER_LEVEL = 10;
+const phonemeLabels = {
+    "TH": "TH as in 'think'",
+    "R": "R as in 'red'",
+    "L": "L as in 'light'",
+    "V": "V as in 'van'",
+    "W": "W as in 'water'",
+    "NG": "NG as in 'sing'",
+    "S": "S as in 'snake'",
+    "Z": "Z as in 'zoo'"
+};
 
 let sentences = { basic: [], intermediateLow: [], intermediateHigh: [], advanced: [], native: [] };
 let levels = ["Basic/Beginner", "Intermediate Low", "Intermediate High", "Advanced", "Native/Fluent"];
@@ -25,6 +35,7 @@ let usedSentences = {};
 let levelCorrectCount = 0;
 let levelSentenceCount = 0;
 let levelScoreHistory = [];
+let finalLevelCompleted = false; // ✅ NEW FLAG
 
 async function loadSentences() {
     try {
@@ -48,22 +59,24 @@ async function loadSentences() {
     }
 }
 
-async function generateSentence() {
-    // 🧽 Hide the score summary box if visible
+function generateSentence() {
+    if (finalLevelCompleted) {
+        const scoreUI = document.getElementById("level-score-ui");
+        if (scoreUI) scoreUI.style.display = "none";
+    }
+
     const resultBox = document.getElementById("test-result-summary");
     if (resultBox) resultBox.style.display = "none";
 
     const user = auth.currentUser;
     const levelKey = ["basic", "intermediateLow", "intermediateHigh", "advanced", "native"][currentLevelIndex];
 
-    // If all done, don't allow more
     if (usedSentences[levelKey] && usedSentences[levelKey].length === 0) {
         document.getElementById("test-sentence").textContent = "✅ You've completed all 10 questions!";
         document.getElementById("start-speech-btn").disabled = true;
         return;
     }
 
-    // Fetch or reuse
     if (!usedSentences[levelKey]) {
         const fullSet = sentences[levelKey];
         if (!fullSet || fullSet.length < 10) {
@@ -76,7 +89,7 @@ async function generateSentence() {
 
         if (user) {
             const userRef = db.collection("users").doc(user.uid);
-            await userRef.set({
+            userRef.set({
                 [`levelQuestions.${levelKey.replaceAll('.', '_')}`]: selected
             }, { merge: true });
         }
@@ -89,7 +102,6 @@ async function generateSentence() {
         return;
     }
 
-    // Show the next sentence
     document.getElementById("test-sentence").textContent = remaining[0];
     document.getElementById("start-speech-btn").disabled = false;
 }
@@ -195,11 +207,10 @@ function analyzeSpeech(targetSentence, userSpeech) {
     const user = auth.currentUser;
     const userId = user?.uid || null;
     const levelKey = ["basic", "intermediateLow", "intermediateHigh", "advanced", "native"][currentLevelIndex];
-    const totalSentences = 10; // ✅ Fix: define the total number of questions
+    const totalSentences = 10;
 
     if (!targetSentence || !userSpeech) return;
 
-    // 🛑 Stop if already done all 10
     if (levelSentenceCount >= totalSentences || !usedSentences[levelKey] || usedSentences[levelKey].length === 0) {
         alert("✅ You’ve already completed all 10 questions!");
         return;
@@ -220,52 +231,72 @@ function analyzeSpeech(targetSentence, userSpeech) {
         const accuracy = result.accuracy || 0;
         const transcription = result.transcription || '';
         const similarity = result.similarity || 0;
-        const wordMatch = result.word_match || 0; // ✅ NEW
-    
-        const totalSentences = 10;
-    
-        // ✅ Reject if the speech is unclear or wrong content
+        const wordMatch = result.word_match || 0;
+        const accentMistakes = result.accent_issues || [];
+
+        // ✅ Reject if unclear speech or mismatched words
         if (transcription.trim() === '' || similarity < 60 || wordMatch < 80) {
             document.getElementById("test-result").innerHTML = `
-                <p style="color: red; font-weight: bold;">⚠️ Your sentence didn't match well enough. Please try again.</p>
+                <p style="color: red; font-weight: bold;">⚠️ Your sentence didn’t match well enough. Please try again.</p>
                 <p><strong>Transcribed:</strong> "${transcription}"</p>
                 <p><strong>Similarity:</strong> ${similarity.toFixed(2)}%</p>
                 <p><strong>Word Match:</strong> ${wordMatch.toFixed(2)}%</p>
             `;
             return;
         }
-    
-        // ✅ Valid attempt, count it
+
+        // ✅ Accept attempt
         usedSentences[levelKey].shift();
         if (accuracy >= 85) levelCorrectCount++;
         levelSentenceCount++;
-    
-        // ✅ Highlight sentence (optional enhancement below)
+
+        // ✅ Accent tips (if any)
+        let accentFeedback = '';
+        if (accentMistakes.length > 0 && accuracy < 80) {
+            const tips = accentMistakes.map(pair => {
+                const phoneme = pair.split('→')[0].trim();
+                return phonemeLabels[phoneme] || phoneme;
+            });
+            const uniqueTips = [...new Set(tips)];
+            accentFeedback = `
+                <p style="color: #ff9800; font-weight: bold;">
+                    🟠 Accent Tips:
+                </p>
+                <p style="color: #444; margin-top: -10px;">
+                    Try improving these sounds: ${uniqueTips.join(', ')}
+                </p>
+            `;
+        }          
+
         const highlighted = highlightDifferences(targetSentence, transcription);
-    
+
         document.getElementById("test-result").innerHTML = `
             <p><strong>Target Sentence:</strong> "${targetSentence}"</p>
             <p><strong>Your Speech:</strong> ${highlighted}</p>
             <p><strong>Pronunciation Accuracy:</strong> ${accuracy.toFixed(2)}%</p>
             <p><strong>Similarity:</strong> ${similarity.toFixed(2)}%</p>
             <p><strong>Word Match:</strong> ${wordMatch.toFixed(2)}%</p>
+            ${accentFeedback}
         `;
-    
+
         document.getElementById("raw-score-detail").textContent = `(Correct: ${levelCorrectCount} / ${totalSentences})`;
         document.getElementById("normalized-score").textContent = ((levelCorrectCount / totalSentences) * 5).toFixed(2);
-    
+
         const progressBar = document.getElementById('level-progress');
         if (progressBar) {
             progressBar.max = totalSentences;
             progressBar.value = levelSentenceCount;
         }
-    
+
         if (levelSentenceCount >= 5 && (levelCorrectCount / totalSentences) * 5 >= 3.5) {
             evaluateLevelProgress(userId);
         } else if (levelSentenceCount === totalSentences) {
             evaluateLevelProgress(userId);
         }
     })
+    .catch(error => {
+        console.error("❌ Error analyzing speech:", error);
+    });
 }
 
 function highlightDifferences(target, user) {
@@ -288,6 +319,9 @@ function highlightDifferences(target, user) {
 }
 
 function evaluateLevelProgress(userId) {
+    console.log("🧪 Checking level progression...");
+    console.log("📍 Current Level Index:", currentLevelIndex);
+
     let minRequired = 5;
     let totalSentences = 10;
     let levelKey = ["basic", "intermediateLow", "intermediateHigh", "advanced", "native"][currentLevelIndex];
@@ -309,33 +343,38 @@ function evaluateLevelProgress(userId) {
     const userRef = db.collection("users").doc(userId);
     const levelName = levels[currentLevelIndex];
 
-    // ✅ Store score in Firestore
     userRef.set({
         [`levelScores.${levelName}`]: levelScore
     }, { merge: true });
 
-    showLevelSummary(levelScore); // ✅ show summary
+    levelScoreHistory.push(levelScore);
 
-    // ✅ No auto-hide. No auto-next. Let user click button to continue.
+    // 🏁 FINAL LEVEL
+    if (currentLevelIndex === levels.length - 1) {
+        const total = levelScoreHistory.reduce((a, b) => a + b, 0);
+        const finalScore = parseFloat(total.toFixed(2));
 
-    if (levelScore >= 3.5) {
-        levelScoreHistory.push(levelScore);
+        finalLevelCompleted = true;
 
-        if (levelScoreHistory.length >= 5) {
-            const total = levelScoreHistory.reduce((a, b) => a + b, 0);
-            const finalScore = parseFloat(total.toFixed(2));
-            showFinalScore(finalScore);
-            userRef.set({ score: finalScore, level: "Completed" }, { merge: true });
-        }
+        document.getElementById("level-score-ui").style.display = "none";
+        document.getElementById("test-result-summary").style.display = "none";
+        showFinalScore(finalScore);
 
-        if (currentLevelIndex < levels.length - 1) {
-            // 🟢 Let "next-level-btn" control progression, don't call generateSentence here
-            db.collection("users").doc(userId).update({
-                [`levelQuestions.${levelKey}`]: firebase.firestore.FieldValue.delete()
-            });
-        }
-        }
+        userRef.set({
+            score: finalScore,
+            isCompleted: true
+        }, { merge: true });
+
+        document.getElementById("next-level-btn").style.display = "none";
+        return;
     }
+
+    // ✅ Show result summary, but DO NOT advance yet
+    if (levelScore >= 3.5) {
+        showLevelSummary(levelScore);
+    }
+}
+
 
 function hideLevelSummary() {
     const box = document.getElementById("test-result-summary");
@@ -343,6 +382,12 @@ function hideLevelSummary() {
 }
 
 function showLevelSummary(score) {
+    // 🛑 BLOCK if all levels are complete
+    if (finalLevelCompleted) {
+        console.log("🚫 Skipping showLevelSummary because final level is done.");
+        return;
+    }
+
     const box = document.getElementById("test-result-summary");
     const title = document.getElementById("result-title");
     const comment = document.getElementById("result-comment");
@@ -363,7 +408,6 @@ function showLevelSummary(score) {
         comment.textContent = "Keep practicing — you’ll improve in no time!";
     }
 
-    // ✅ Show button only if user passed and has another level
     if (score >= 3.5 && currentLevelIndex < levels.length - 1) {
         nextBtn.style.display = "inline-block";
     } else {
@@ -371,10 +415,11 @@ function showLevelSummary(score) {
     }
 }
 
-
 function nextLevel() {
     hideLevelSummary();
     document.getElementById("next-level-btn").style.display = "none";
+
+    if (currentLevelIndex >= levels.length - 1) return;
 
     currentLevelIndex++;
     document.getElementById("current-level").textContent = levels[currentLevelIndex];
@@ -383,26 +428,42 @@ function nextLevel() {
     levelSentenceCount = 0;
     usedSentences = {};
 
-    if (document.getElementById('points')) {
-        document.getElementById('points').textContent = points;
-    }
+    const userRef = db.collection("users").doc(auth.currentUser.uid);
+    userRef.set({ currentLevel: currentLevelIndex }, { merge: true });
 
+    // 🧹 Clean up last level's questions
+    const previousKey = ["basic", "intermediateLow", "intermediateHigh", "advanced", "native"][currentLevelIndex - 1];
+    db.collection("users").doc(auth.currentUser.uid).update({
+        [`levelQuestions.${previousKey}`]: firebase.firestore.FieldValue.delete()
+    });
+
+    // 🔁 Reset UI
     document.getElementById("normalized-score").textContent = '0.00';
     document.getElementById("raw-score-detail").textContent = '(Correct: 0 / 0)';
+    document.getElementById("level-score-ui").style.display = "block";
 
     generateSentence();
 }
-
 
 function showFinalScore(scoreOutOf25) {
     const box = document.getElementById("final-score-summary");
     const text = document.getElementById("final-score-text");
 
+    const scoreUI = document.getElementById("level-score-ui");
+    const summaryBox = document.getElementById("test-result-summary");
+
+    if (scoreUI) scoreUI.style.display = "none";
+    if (summaryBox) summaryBox.style.display = "none";  // 🧼 Add this to hide summary
+
     if (box && text) {
         box.style.display = "block";
         text.textContent = `Your Final Score: ${scoreOutOf25} / 25`;
     }
+
+    document.getElementById("normalized-score").textContent = '';
+    document.getElementById("raw-score-detail").textContent = '';
 }
+
 
 function playNativeCustom() {
     const sentence = document.getElementById("test-sentence").textContent;
@@ -423,14 +484,49 @@ function playNativeCustom() {
         });
 }
 
+function resetUserLevel() {
+    const user = auth.currentUser;
+    if (user) {
+      db.collection("users").doc(user.uid).set({
+        currentLevel: 0,
+        levelScores: {},  // optional: reset scores too
+        lessons: {}
+      }, { merge: true }).then(() => {
+        currentLevelIndex = 0;
+        levelCorrectCount = 0;
+        levelSentenceCount = 0;
+        usedSentences = {};
+        levelScoreHistory = [];
+        document.getElementById("current-level").textContent = levels[0];
+        document.getElementById("normalized-score").textContent = '0.00';
+        document.getElementById("raw-score-detail").textContent = '(Correct: 0 / 0)';
+        generateSentence();
+      });
+    }
+  }  
+
 document.addEventListener("DOMContentLoaded", function () {
     initializeSpeechRecognition();
     loadSentences();
 
     auth.onAuthStateChanged(user => {
         if (user) {
+            const userRef = db.collection("users").doc(user.uid);
+            userRef.get().then(doc => {
+                if (doc.exists) {
+                    const savedLevel = parseInt(doc.data().currentLevel);
+                    currentLevelIndex = isNaN(savedLevel) || savedLevel < 0 || savedLevel >= levels.length ? 0 : savedLevel;
+                    document.getElementById("current-level").textContent = levels[currentLevelIndex];
+                } else {
+                    currentLevelIndex = 0;
+                    document.getElementById("current-level").textContent = levels[0];
+                }
+            });    
+
+            // Button listeners for logged-in users
             document.getElementById("generate-btn")?.addEventListener("click", generateSentence);
             document.getElementById("start-speech-btn")?.addEventListener("click", () => startSpeechRecognition(user.uid));
         }
     });
 });
+

@@ -180,16 +180,35 @@
       <aside class="sidebar">
         <nav>
           <ul>
-            <li><a href="{{ url_for('home') }}">Dashboard</a></li>
-            <li><a href="{{ url_for('user') }}">User</a></li>
-            <li><a href="{{ url_for('settings') }}">Settings</a></li>
-            <li><a href="{{ url_for('speech_test') }}">Speech Test</a></li>
-            <li><a href="{{ url_for('learn') }}" class="{% if current_page == 'learn' %}active{% endif %}">Learn</a></li>
-            <li id="admin-link" style="display: none;"><a href="/admin">Admin</a></li>
+            <li><a href="{{ url_for('home') }}">
+              <img src="/static/icons/dashboard.svg" width="20" style="margin-right: 10px;"> Dashboard</a>
+            </li>
+            <li><a href="{{ url_for('user') }}">
+              <img src="/static/icons/user.svg" width="20" style="margin-right: 10px;"> User</a>
+            </li>
+            <li><a href="{{ url_for('settings') }}">
+              <img src="/static/icons/settings.svg" width="20" style="margin-right: 10px;"> Settings</a>
+            </li>
+            <li>
+              <a href="{{ url_for('speech_test') }}" style="display: flex; align-items: center;">
+                <img src="/static/icons/mic.svg" width="24" height="24" style="margin-right: 12px;"> 
+                <span>Speech Test</span>
+              </a>
+            </li>            
+            <li>
+              <a href="{{ url_for('learn') }}" class="{% if current_page == 'learn' %}active{% endif %}">
+                <img src="/static/icons/book.svg" width="20" style="margin-right: 10px;"> Learn
+              </a>
+            </li>
+            <li id="admin-link" style="display: none;">
+              <a href="/admin">
+                <img src="/static/icons/shield.svg" width="20" style="margin-right: 10px;"> Admin
+              </a>
+            </li>
           </ul>
         </nav>
       </aside>
-  
+      
       <div class="main-content">
         <div id="dashboard" class="page active">
           <header></header>
@@ -200,7 +219,11 @@
             <div class="dashboard-cards">
               <div class="dashboard-card">
                 <h3>📚 Lessons Completed</h3>
-                <p>10</p>
+                <li>Lesson 1 <span id="lesson1-status">⏳</span></li>
+                <li>Lesson 2 <span id="lesson2-status">⏳</span></li>
+                <li>Lesson 3 <span id="lesson3-status">⏳</span></li>
+                <li>Lesson 4 <span id="lesson4-status">⏳</span></li>
+                <li>Lesson 5 <span id="lesson5-status">⏳</span></li>
               </div>
               <div class="dashboard-card">
                 <h3>📊 Your Overall Accuracy: <span id="user-accuracy">0.00%</span></h3>
@@ -376,7 +399,21 @@ document.addEventListener("DOMContentLoaded", updateWelcomeMessage);
             }
 
             document.getElementById("user-score").textContent = data.score || "0.00";
-            document.getElementById("user-level").textContent = data.level || "Unknown";
+            if (data.isCompleted) {
+                document.getElementById("user-level").textContent = "🎓 All Levels Completed";
+            } else {
+              const levelDisplay = document.getElementById("user-level");
+              if (levelDisplay) {
+                  if (data.isCompleted === true) {
+                      levelDisplay.textContent = "🎓 All Levels Completed";
+                  } else if (typeof data.currentLevel === "number") {
+                      const levels = ["Basic/Beginner", "Intermediate Low", "Intermediate High", "Advanced", "Native/Fluent"];
+                      levelDisplay.textContent = levels[data.currentLevel] || data.level || "Unknown";
+                  } else {
+                      levelDisplay.textContent = data.currentLevel || "Unknown";
+                  }
+              }
+            }
             document.getElementById("user-accuracy").textContent = data.overallAccuracy ? `${data.overallAccuracy}%` : "0.00%";
 
         } catch (error) {
@@ -451,10 +488,10 @@ function loadUserStats(userId) {
                 } else {
                     console.warn("⚠️ Warning: #user-score element not found.");
                 }
-
                 if (levelElement) {
-                    levelElement.textContent = data.level || "Unknown";
-                } else {
+                  levelElement.textContent = data.isCompleted ? "🎓 All Levels Completed" : (data.level || "Unknown");
+                } 
+                else {
                     console.warn("⚠️ Warning: #user-level element not found.");
                 }
             } else {
@@ -506,14 +543,36 @@ function getTestScore(userId) {
                 let levelElement = document.getElementById("user-level");
                 let accuracyElement = document.getElementById("user-accuracy");
 
-                if (scoreElement) scoreElement.textContent = data.score || "0.00";
-                else console.warn("⚠️ Warning: #user-score element not found.");
+                if (scoreElement) {
+                    scoreElement.textContent = data.score || "0.00";
+                } else {
+                    console.warn("⚠️ Warning: #user-score element not found.");
+                }
 
-                if (levelElement) levelElement.textContent = data.level || "Unknown";
-                else console.warn("⚠️ Warning: #user-level element not found.");
+                if (levelElement) {
+                    if (data.isCompleted === true) {
+                        levelElement.textContent = "🎓 All Levels Completed";
+                    } else if (typeof data.currentLevel === "number") {
+                        const levels = [
+                            "Basic/Beginner",
+                            "Intermediate Low",
+                            "Intermediate High",
+                            "Advanced",
+                            "Native/Fluent"
+                        ];
+                        levelElement.textContent = levels[data.currentLevel] || "Unknown";
+                    } else {
+                        levelElement.textContent = "Unknown";
+                    }
+                } else {
+                    console.warn("⚠️ Warning: #user-level element not found.");
+                }
 
-                if (accuracyElement) accuracyElement.textContent = data.overallAccuracy ? `${data.overallAccuracy}%` : "0.00%";
-                else console.warn("⚠️ Warning: #user-accuracy element not found.");
+                if (accuracyElement) {
+                    accuracyElement.textContent = data.overallAccuracy ? `${data.overallAccuracy}%` : "0.00%";
+                } else {
+                    console.warn("⚠️ Warning: #user-accuracy element not found.");
+                }
             } else {
                 console.log("❌ No test score found.");
             }
@@ -560,6 +619,27 @@ function showAdminLink() {
         }
     });
 }
+
+firebase.auth().onAuthStateChanged(user => {
+  if (user) {
+    firebase.firestore().collection("users").doc(user.uid).get().then(doc => {
+      const data = doc.data();
+      for (let i = 1; i <= 5; i++) {
+        if (data.lessons && data.lessons[`lesson${i}`]) {
+          document.getElementById(`lesson${i}-status`).textContent = "✅ Completed";
+        } else {
+          document.getElementById(`lesson${i}-status`).textContent = "⏳ Not Started";
+        }
+      }
+    });
+  } else {
+    for (let i = 1; i <= 5; i++) {
+      if (localStorage.getItem(`lesson${i}_complete`) === "true") {
+        document.getElementById(`lesson${i}-status`).textContent = "✅ Completed (Guest)";
+      }
+    }
+  }
+});
 
 // ✅ Run function on page load
 document.addEventListener("DOMContentLoaded", showAdminLink);

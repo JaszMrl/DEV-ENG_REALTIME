@@ -23,9 +23,12 @@
         background-color: #f7f7f7;
     }
     .app-container {
-        display: flex;
-        height: 100vh;
-        overflow: hidden;
+    display: flex;
+    min-height: 100vh;        /* ✅ Allow page to grow */
+    height: auto;
+    overflow-x: hidden;       /* ✅ Hide horizontal scroll only */
+    overflow-y: auto;         /* ✅ Enable vertical scroll */
+    flex-direction: row;
     }
     .sidebar {
         background-color: #333;
@@ -126,18 +129,38 @@
 </style>
 
 <body>
-    <div class="app-container">
-        <aside class="sidebar">
-            <nav>
+        <div class="app-container">
+            <aside class="sidebar">
+              <nav>
                 <ul>
-                    <li><a href="{{ url_for('home') }}">Dashboard</a></li>
-                    <li><a href="{{ url_for('user') }}">User</a></li>
-                    <li><a href="{{ url_for('settings') }}">Settings</a></li>
-                    <li><a href="{{ url_for('speech_test') }}">Speech Test</a></li>
-                    <li><a href="{{ url_for('learn') }}">Learn</a></li>
+                  <li><a href="{{ url_for('home') }}">
+                    <img src="/static/icons/dashboard.svg" width="20" style="margin-right: 10px;"> Dashboard</a>
+                  </li>
+                  <li><a href="{{ url_for('user') }}">
+                    <img src="/static/icons/user.svg" width="20" style="margin-right: 10px;"> User</a>
+                  </li>
+                  <li><a href="{{ url_for('settings') }}">
+                    <img src="/static/icons/settings.svg" width="20" style="margin-right: 10px;"> Settings</a>
+                  </li>
+                  <li>
+                    <a href="{{ url_for('speech_test') }}" style="display: flex; align-items: center;">
+                      <img src="/static/icons/mic.svg" width="24" height="24" style="margin-right: 12px;"> 
+                      <span>Speech Test</span>
+                    </a>
+                  </li>            
+                  <li>
+                    <a href="{{ url_for('learn') }}" class="{% if current_page == 'learn' %}active{% endif %}">
+                      <img src="/static/icons/book.svg" width="20" style="margin-right: 10px;"> Learn
+                    </a>
+                  </li>
+                  <li id="admin-link" style="display: none;">
+                    <a href="/admin">
+                      <img src="/static/icons/shield.svg" width="20" style="margin-right: 10px;"> Admin
+                    </a>
+                  </li>
                 </ul>
-            </nav>  
-        </aside>
+              </nav>
+            </aside>
 
         <div class="main-content">
             <div class="test-container">
@@ -153,8 +176,10 @@
                 <p id="test-result">Your accuracy will be displayed here...</p>
 
                 <!-- ✅ NEW SCORE DISPLAY SECTION -->
-                <h3>Level Score: <span id="normalized-score">0.00</span>/5</h3>
-                <p id="raw-score-detail">(Correct: 0 / 0)</p>
+                <div id="level-score-ui">
+                    <h3>Level Score: <span id="normalized-score">0.00</span>/5</h3>
+                    <p id="raw-score-detail">(Correct: 0 / 0)</p>
+                </div>  
 
                 <!-- 🎯 Score Summary Box -->
                 <div id="test-result-summary" style="display: none; margin-top: 20px;" class="result-box">
@@ -164,15 +189,17 @@
                     <button id="next-level-btn" onclick="nextLevel()" style="display: none;">Continue to Next Level</button>
                 </div>
 
+                <!-- Final Score Box -->
                 <div id="final-score-summary" class="result-box" style="display: none; margin-top: 20px;">
                     <h3>🏁 All Levels Complete!</h3>
                     <p>Congratulations! You finished the test.</p>
                     <p id="final-score-text"></p>
-                  </div>                  
+                </div>                 
 
                 <!-- ✅ Back to Home Button -->
                 <div class="back-home-container">
                     <button onclick="goBackHome()">🏠 Back to Home</button>
+                    <button onclick="resetUserLevel()">🔁 Reset Level</button>
                 </div>
             </div>
         </div>

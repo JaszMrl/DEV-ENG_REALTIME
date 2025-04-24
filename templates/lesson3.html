@@ -134,11 +134,31 @@
     <aside class="sidebar">
       <nav>
         <ul>
-          <li><a href="{{ url_for('home') }}">Dashboard</a></li>
-          <li><a href="{{ url_for('user') }}">User</a></li>
-          <li><a href="{{ url_for('settings') }}">Settings</a></li>
-          <li><a href="{{ url_for('speech_test') }}">Speech Test</a></li>
-          <li><a href="{{ url_for('learn') }}" class="active">Learn</a></li>
+          <li><a href="{{ url_for('home') }}">
+            <img src="/static/icons/dashboard.svg" width="20" style="margin-right: 10px;"> Dashboard</a>
+          </li>
+          <li><a href="{{ url_for('user') }}">
+            <img src="/static/icons/user.svg" width="20" style="margin-right: 10px;"> User</a>
+          </li>
+          <li><a href="{{ url_for('settings') }}">
+            <img src="/static/icons/settings.svg" width="20" style="margin-right: 10px;"> Settings</a>
+          </li>
+          <li>
+            <a href="{{ url_for('speech_test') }}" style="display: flex; align-items: center;">
+              <img src="/static/icons/mic.svg" width="24" height="24" style="margin-right: 12px;"> 
+              <span>Speech Test</span>
+            </a>
+          </li>            
+          <li>
+            <a href="{{ url_for('learn') }}" class="{% if current_page == 'learn' %}active{% endif %}">
+              <img src="/static/icons/book.svg" width="20" style="margin-right: 10px;"> Learn
+            </a>
+          </li>
+          <li id="admin-link" style="display: none;">
+            <a href="/admin">
+              <img src="/static/icons/shield.svg" width="20" style="margin-right: 10px;"> Admin
+            </a>
+          </li>
         </ul>
       </nav>
     </aside>
@@ -318,6 +338,18 @@
         loadQuizWord();
       }
     }
+
+    function markLessonComplete(lessonNum) {
+    const user = firebase.auth().currentUser;
+    if (user) {
+      firebase.firestore().collection("users").doc(user.uid).set({
+        [`lessons.lesson${lessonNum}`]: true
+      }, { merge: true });
+    } else {
+      // Optional: use localStorage for guests
+      localStorage.setItem(`lesson${lessonNum}_complete`, "true");
+    }
+  }
 
     window.addEventListener('DOMContentLoaded', loadQuizWord);
   </script>

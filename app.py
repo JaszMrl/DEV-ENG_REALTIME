@@ -133,7 +133,6 @@ def analyze_pronunciation():
         accuracy = max(0, min(accuracy, 100))
         similarity_score = fuzz.ratio(target_sentence, user_speech)
 
-        # ✅ NEW: Word-level matching
         def word_match_ratio(ref, hypo):
             ref_words = ref.split()
             hypo_words = hypo.split()
@@ -142,14 +141,35 @@ def analyze_pronunciation():
 
         word_match = word_match_ratio(target_sentence, user_speech)
 
+        # ✅ Accent error detection
+        def flag_accent_mistakes(target_phonemes, user_phonemes):
+            accent_issues = []
+            common_confusions = {
+                "TH": ["D", "T"],
+                "V": ["B", "W", "F"],
+                "L": ["R"],
+                "R": ["L"],
+                "S": ["SH"],
+                "Z": ["S"],
+                "NG": ["N"]
+            }
+            for t, u in zip(target_phonemes, user_phonemes):
+                for key, confusions in common_confusions.items():
+                    if key in t and any(conf in u for conf in confusions):
+                        accent_issues.append(f"{key} → {u}")
+            return accent_issues
+
+        accent_mistakes = flag_accent_mistakes(target_phonemes, user_phonemes)
+
         return jsonify({
             "target_phonemes": target_phonemes,
             "user_phonemes": user_phonemes,
             "transcription": user_speech,
             "similarity": round(similarity_score, 2),
-            "word_match": round(word_match, 2),  # ✅ Included in response
+            "word_match": round(word_match, 2),
             "accuracy": round(accuracy, 2),
-            "strictness": strictness
+            "strictness": strictness,
+            "accent_issues": accent_mistakes
         })
 
     except Exception as e:

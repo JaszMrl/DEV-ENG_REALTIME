@@ -9,89 +9,107 @@ html, body {
   margin: 0;
   padding: 0;
   font-family: 'Poppins', sans-serif;
-  background-color: #f7f7f7;
   height: 100%;
-  overflow-x: hidden;
 }
 
 /* ======= LAYOUT ======= */
 .app-container {
   display: flex;
-  height: 100%;
-  width: 100%;
+  min-height: 100vh;        /* ✅ Allow page to grow */
+  height: auto;
+  overflow-x: hidden;       /* ✅ Hide horizontal scroll only */
+  overflow-y: auto;         /* ✅ Enable vertical scroll */
+  flex-direction: row;
 }
 
 /* ======= SIDEBAR ======= */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: 'Poppins', sans-serif;
+}
+
+.app-container {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* 🧼 Ensure sidebar is flush with top */
 .sidebar {
+  position: fixed;
+  top: 0;           /* ✅ Add this */
+  left: 0;          /* ✅ Add this */
+  height: 100vh;    /* already correct */
   width: 250px;
   background-color: #333;
   color: white;
-  padding: 20px 0;
-  position: fixed;
-  top: 0;
-  left: 0;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-}
-
-.sidebar nav ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  width: 100%;
-}
-
-.sidebar nav ul li {
-  margin: 15px 0;
-  width: 100%;
-}
-
-.sidebar nav ul li a {
-  text-decoration: none;
-  color: white;
-  font-size: 1.1rem;
-  padding: 10px 20px;
-  display: block;
-  border-radius: 8px;
-  font-weight: 400;
-  transition: background 0.3s ease, transform 0.3s ease;
+  padding: 0;       /* remove vertical padding if unnecessary */
   box-sizing: border-box;
 }
 
+.sidebar nav {
+  margin: 0;
+  padding: 0;
+}
+
+.sidebar nav ul {
+  margin: 0;
+  padding: 20px 0 0 0;
+  list-style: none;
+}
+
+.sidebar nav ul li {
+  margin: 0;
+  padding: 0;
+}
+
+.sidebar nav ul li a {
+  display: flex;
+  align-items: center;
+  color: white;
+  text-decoration: none;
+  padding: 12px 20px;
+  font-size: 1rem;
+  transition: background 0.2s;
+}
+
 .sidebar nav ul li a:hover {
-  background-color: #3B82F6;
-  transform: translateX(5px);
+  background-color: #444;
+  transform: translateX(4px);
 }
 
-.sidebar nav ul li a.active {
-  background-color: #60A5FA;
-  font-weight: 600;
-  transform: translateX(5px);
+.sidebar nav ul li a img {
+  filter: brightness(0) invert(1);
+  width: 24px;
+  height: 24px;
+  margin-right: 12px;
 }
 
-/* Footer inside sidebar (optional) */
-.sidebar .footer {
-  margin-top: auto;
-  font-size: 0.9rem;
-  color: #d1d5db;
-  text-align: center;
-  padding-top: 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
+.sidebar img {
+  width: 24px;
+  height: 24px;
+  margin-right: 12px;
+  object-fit: contain;
+  vertical-align: middle;
+  filter: brightness(0) invert(1); /* ensures all white */
 }
 
 /* ======= MAIN CONTENT ======= */
 .main-content {
-  margin-left: 250px;
-  flex-grow: 1;
-  padding: 40px 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  height: 100%;
+  margin-left: 250px; /* 👈 same as sidebar width */
+  padding: 20px;
   box-sizing: border-box;
 }
+
+.main-content h1,
+.main-content h2,
+.main-content header {
+  margin-top: 0;
+  padding-top: 0;
+}
+
 
 /* ======= DASHBOARD GRIDS ======= */
 .dashboard-cards {
@@ -257,7 +275,74 @@ button:hover, .speech-btn:hover {
   }
 }
 
-/* Optional utility */
-.hidden {
-  display: none;
+/* ===== GLOBAL RESPONSIVE ADDITIONS ===== */
+@media (max-width: 768px) {
+  .app-container {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+    text-align: center;
+  }
+
+  .sidebar nav ul {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .sidebar nav ul li {
+    margin: 5px 10px;
+  }
+
+  .sidebar nav ul li a {
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    justify-content: center;
+  }
+
+  .main-content {
+    margin-left: 0 !important;
+    padding: 20px;
+    width: 100%;
+    align-items: center;
+  }
+
+  .lesson-container,
+  .test-container,
+  .settings-container,
+  .profile-card,
+  .update-info,
+  .user-info {
+    width: 100%;
+    max-width: 100% !important;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+
+  .dashboard-cards,
+  .lesson-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .back-home-container {
+    flex-direction: column;
+    gap: 10px;
+    display: flex;
+    align-items: stretch;
+  }
+
+  button,
+  .word-button,
+  .speech-btn {
+    width: 100%;
+    font-size: 1rem;
+    padding: 12px 16px;
+    box-sizing: border-box;
+    margin-top: 10px;
+  }
 }
