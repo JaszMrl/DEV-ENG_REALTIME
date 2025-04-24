@@ -195,11 +195,12 @@ function analyzeSpeech(targetSentence, userSpeech) {
     const user = auth.currentUser;
     const userId = user?.uid || null;
     const levelKey = ["basic", "intermediateLow", "intermediateHigh", "advanced", "native"][currentLevelIndex];
+    const totalSentences = 10; // ✅ Fix: define the total number of questions
 
     if (!targetSentence || !userSpeech) return;
 
     // 🛑 Stop if already done all 10
-    if (levelSentenceCount >= 10 || !usedSentences[levelKey] || usedSentences[levelKey].length === 0) {
+    if (levelSentenceCount >= totalSentences || !usedSentences[levelKey] || usedSentences[levelKey].length === 0) {
         alert("✅ You’ve already completed all 10 questions!");
         return;
     }
@@ -217,38 +218,73 @@ function analyzeSpeech(targetSentence, userSpeech) {
     .then(res => res.json())
     .then(result => {
         const accuracy = result.accuracy || 0;
+        const transcription = result.transcription || '';
+        const similarity = result.similarity || 0;
+        const wordMatch = result.word_match || 0; // ✅ NEW
+    
         const totalSentences = 10;
-
+    
+        // ✅ Reject if the speech is unclear or wrong content
+        if (transcription.trim() === '' || similarity < 60 || wordMatch < 80) {
+            document.getElementById("test-result").innerHTML = `
+                <p style="color: red; font-weight: bold;">⚠️ Your sentence didn't match well enough. Please try again.</p>
+                <p><strong>Transcribed:</strong> "${transcription}"</p>
+                <p><strong>Similarity:</strong> ${similarity.toFixed(2)}%</p>
+                <p><strong>Word Match:</strong> ${wordMatch.toFixed(2)}%</p>
+            `;
+            return;
+        }
+    
+        // ✅ Valid attempt, count it
         usedSentences[levelKey].shift();
-
         if (accuracy >= 85) levelCorrectCount++;
         levelSentenceCount++;
-
+    
+        // ✅ Highlight sentence (optional enhancement below)
+        const highlighted = highlightDifferences(targetSentence, transcription);
+    
         document.getElementById("test-result").innerHTML = `
             <p><strong>Target Sentence:</strong> "${targetSentence}"</p>
-            <p><strong>Your Speech:</strong> "${userSpeech}"</p>
+            <p><strong>Your Speech:</strong> ${highlighted}</p>
             <p><strong>Pronunciation Accuracy:</strong> ${accuracy.toFixed(2)}%</p>
+            <p><strong>Similarity:</strong> ${similarity.toFixed(2)}%</p>
+            <p><strong>Word Match:</strong> ${wordMatch.toFixed(2)}%</p>
         `;
-
+    
         document.getElementById("raw-score-detail").textContent = `(Correct: ${levelCorrectCount} / ${totalSentences})`;
         document.getElementById("normalized-score").textContent = ((levelCorrectCount / totalSentences) * 5).toFixed(2);
-
+    
         const progressBar = document.getElementById('level-progress');
         if (progressBar) {
             progressBar.max = totalSentences;
             progressBar.value = levelSentenceCount;
         }
-
-        // ✅ Only logged-in users get progress saved
+    
         if (levelSentenceCount >= 5 && (levelCorrectCount / totalSentences) * 5 >= 3.5) {
             evaluateLevelProgress(userId);
         } else if (levelSentenceCount === totalSentences) {
             evaluateLevelProgress(userId);
         }
     })
-    .catch(error => {
-        console.error("❌ Error analyzing speech:", error);
-    });
+}
+
+function highlightDifferences(target, user) {
+    const clean = (s) => s.toLowerCase().replace(/[^\w\s]/g, '').trim();
+    const targetWords = clean(target).split(/\s+/);
+    const userWords = clean(user).split(/\s+/);
+
+    const length = Math.max(targetWords.length, userWords.length);
+
+    return Array.from({ length }).map((_, i) => {
+        const t = targetWords[i] || '';
+        const u = userWords[i] || '';
+
+        if (t === u) {
+            return `<span style="color: green; font-weight: bold;">${u}</span>`;
+        } else {
+            return `<span style="color: red;">${u}</span>`;
+        }
+    }).join(' ');
 }
 
 function evaluateLevelProgress(userId) {

@@ -15,4 +15,5 @@ rapidfuzz==3.5.2
 sounddevice==0.4.6
 wavio==0.0.6
 keyboard==0.13.5
+rapidfuzz
 gunicorn
