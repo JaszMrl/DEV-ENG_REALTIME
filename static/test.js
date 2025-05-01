@@ -60,6 +60,10 @@ async function loadSentences() {
 }
 
 function generateSentence() {
+    document.getElementById("test-result").innerHTML = ""; // ✅ clear test result
+    document.getElementById("accent-score").innerHTML = ""; // ✅ clear accent score
+    document.getElementById("accent-similarity").innerHTML = ""; // ✅ clear accent similarity
+
     if (finalLevelCompleted) {
         const scoreUI = document.getElementById("level-score-ui");
         if (scoreUI) scoreUI.style.display = "none";
@@ -226,13 +230,22 @@ function analyzeSpeech(targetSentence, userSpeech) {
             language: "en-US"
         })
     })
-    .then(res => res.json())
+    .then(async res => {
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || "Server error");
+        }
+        return res.json();
+    })    
     .then(result => {
         const accuracy = result.accuracy || 0;
         const transcription = result.transcription || '';
         const similarity = result.similarity || 0;
         const wordMatch = result.word_match || 0;
         const accentMistakes = result.accent_issues || [];
+        const accentScore = result.accent_score || 0;
+        const accentSimilarity = result.accent_similarity || 0;
+
 
         // ✅ Reject if unclear speech or mismatched words
         if (transcription.trim() === '' || similarity < 60 || wordMatch < 80) {
@@ -241,6 +254,9 @@ function analyzeSpeech(targetSentence, userSpeech) {
                 <p><strong>Transcribed:</strong> "${transcription}"</p>
                 <p><strong>Similarity:</strong> ${similarity.toFixed(2)}%</p>
                 <p><strong>Word Match:</strong> ${wordMatch.toFixed(2)}%</p>
+                <p><strong>Accent Score:</strong> ${accentScore.toFixed(2)} / 5</p>
+                <p><strong>Accent Similarity:</strong> ${accentSimilarity.toFixed(2)}%</p>
+
             `;
             return;
         }
@@ -274,13 +290,15 @@ function analyzeSpeech(targetSentence, userSpeech) {
             <p><strong>Target Sentence:</strong> "${targetSentence}"</p>
             <p><strong>Your Speech:</strong> ${highlighted}</p>
             <p><strong>Pronunciation Accuracy:</strong> ${accuracy.toFixed(2)}%</p>
-            <p><strong>Similarity:</strong> ${similarity.toFixed(2)}%</p>
             <p><strong>Word Match:</strong> ${wordMatch.toFixed(2)}%</p>
             ${accentFeedback}
         `;
 
         document.getElementById("raw-score-detail").textContent = `(Correct: ${levelCorrectCount} / ${totalSentences})`;
         document.getElementById("normalized-score").textContent = ((levelCorrectCount / totalSentences) * 5).toFixed(2);
+        document.getElementById("accent-score").innerHTML = `<strong>Accent Score:</strong> ${accentScore.toFixed(2)} / 5`;
+        document.getElementById("accent-similarity").innerHTML = `<strong>Accent Similarity:</strong> ${accentSimilarity.toFixed(2)}%`;
+
 
         const progressBar = document.getElementById('level-progress');
         if (progressBar) {
@@ -296,7 +314,8 @@ function analyzeSpeech(targetSentence, userSpeech) {
     })
     .catch(error => {
         console.error("❌ Error analyzing speech:", error);
-    });
+        alert("❌ Failed to analyze speech: " + error.message);
+    });    
 }
 
 function highlightDifferences(target, user) {
@@ -322,21 +341,19 @@ function evaluateLevelProgress(userId) {
     console.log("🧪 Checking level progression...");
     console.log("📍 Current Level Index:", currentLevelIndex);
 
-    let minRequired = 5;
     let totalSentences = 10;
     let levelKey = ["basic", "intermediateLow", "intermediateHigh", "advanced", "native"][currentLevelIndex];
 
-    if (levelSentenceCount < minRequired) {
-        alert(`⚠️ You must answer at least ${minRequired} sentences to complete this level.`);
-        return;
+    if (levelSentenceCount < 5) {
+        alert(`⚠️ You must answer at least 5 sentences to complete this level.`);
     }
 
     let levelScore = (levelCorrectCount / totalSentences) * 5;
     levelScore = parseFloat(levelScore.toFixed(2));
 
+    // ✅ Always show & record score
     const scoreDisplay = document.getElementById('normalized-score');
     const detailDisplay = document.getElementById('raw-score-detail');
-
     if (scoreDisplay) scoreDisplay.textContent = levelScore.toFixed(2);
     if (detailDisplay) detailDisplay.textContent = `(Correct: ${levelCorrectCount} / ${totalSentences})`;
 
@@ -348,8 +365,9 @@ function evaluateLevelProgress(userId) {
     }, { merge: true });
 
     levelScoreHistory.push(levelScore);
+    console.log("📊 Level score history:", levelScoreHistory);
 
-    // 🏁 FINAL LEVEL
+    // 🏁 Final level
     if (currentLevelIndex === levels.length - 1) {
         const total = levelScoreHistory.reduce((a, b) => a + b, 0);
         const finalScore = parseFloat(total.toFixed(2));
@@ -369,12 +387,11 @@ function evaluateLevelProgress(userId) {
         return;
     }
 
-    // ✅ Show result summary, but DO NOT advance yet
+    // ✅ Only allow moving on if passed
     if (levelScore >= 3.5) {
         showLevelSummary(levelScore);
     }
 }
-
 
 function hideLevelSummary() {
     const box = document.getElementById("test-result-summary");
@@ -440,10 +457,14 @@ function nextLevel() {
     // 🔁 Reset UI
     document.getElementById("normalized-score").textContent = '0.00';
     document.getElementById("raw-score-detail").textContent = '(Correct: 0 / 0)';
+    document.getElementById("test-result").innerHTML = ""; // ✅ clear test result
+    document.getElementById("accent-score").innerHTML = ""; // ✅ clear accent score
+    document.getElementById("accent-similarity").innerHTML = ""; // ✅ clear accent similarity
     document.getElementById("level-score-ui").style.display = "block";
 
     generateSentence();
 }
+
 
 function showFinalScore(scoreOutOf25) {
     const box = document.getElementById("final-score-summary");

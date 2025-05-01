@@ -1,15 +1,208 @@
 from flask import Flask, request, jsonify, render_template, send_file
-import pronouncing
-import os
-import json
-import re
+import os, json, re, tempfile, uuid
 from difflib import SequenceMatcher
 from Levenshtein import ratio
 from gtts import gTTS
-import tempfile
+import pronouncing
+import joblib
+import librosa
+import numpy as np
+import soundfile as sf
+import noisereduce as nr
+from fastdtw import fastdtw
+from scipy.spatial.distance import euclidean
 from rapidfuzz import fuzz
 
 app = Flask(__name__)
+score_model = joblib.load("score_classifier_model.pkl")
+
+REFERENCE_AUDIO_FILES = {
+    "male": {
+        "alloy": "male_reference_alloy.wav",
+        "echo": "male_reference_echo.wav",
+        "onyx": "male_reference_onyx.wav",
+        "fable": "male_reference_fable.wav"
+    },
+    "female": {
+        "nova": "female_reference_nova.wav",
+        "alloy": "female_reference_alloy.wav",
+        "shimmer": "female_reference_shimmer.wav"
+    }
+}
+
+# ----------------- Helpers -----------------
+def extract_mfcc(file_path, n_mfcc=13):
+    y, sr = librosa.load(file_path, sr=16000)
+    return librosa.feature.mfcc(y=y, sr=sr, n_mfcc=n_mfcc).T
+
+def preprocess_audio(input_file, output_file, target_sr=16000):
+    y, sr = librosa.load(input_file, sr=target_sr, mono=True)
+    sf.write(output_file, y, target_sr)
+    return output_file
+
+def remove_noise(audio_path):
+    y, sr = librosa.load(audio_path, sr=16000)
+    y_denoised = nr.reduce_noise(y=y, sr=sr)
+    denoised_path = "denoised_" + os.path.basename(audio_path)
+    sf.write(denoised_path, y_denoised, sr)
+    return denoised_path
+
+def compute_similarity(distance, num_frames):
+    base = 15000
+    max_distance = base + (num_frames * 500)
+    normalized_distance = max(0, min(distance, max_distance))
+    similarity = 100 * (1 - (normalized_distance / max_distance))
+    return round(similarity, 2)
+
+def compare_accent_with_reference(user_mfcc, reference_mfcc):
+    distance, _ = fastdtw(user_mfcc, reference_mfcc, dist=euclidean)
+    return compute_similarity(distance, len(user_mfcc))
+
+def compare_with_multiple_references(user_mfcc, reference_mfccs):
+    best_similarity = 0
+    best_voice = None
+    for voice, ref_mfcc in reference_mfccs.items():
+        sim = compare_accent_with_reference(user_mfcc, ref_mfcc)
+        if sim > best_similarity:
+            best_similarity = sim
+            best_voice = voice
+    return best_voice, best_similarity
+
+def predict_score_from_similarity(similarity_percent):
+    input_feature = np.array([[similarity_percent]])
+    return score_model.predict(input_feature)[0]
+
+def generate_speech_if_not_exists(text, voices):
+    import openai
+    openai.api_key = "apikeyhere"
+    reference_mfccs = {}
+    for voice, file_path in voices.items():
+        if not os.path.exists(file_path):
+            response = openai.audio.speech.create(
+                model="tts-1",
+                voice=voice,
+                input=text
+            )
+            with open(file_path, "wb") as f:
+                f.write(response.content)
+        reference_mfccs[voice] = extract_mfcc(file_path)
+    return reference_mfccs
+
+# ----------------- Analyze Route -----------------
+@app.route('/analyze', methods=['POST'])
+def analyze_pronunciation():
+    try:
+        data = request.json
+        target_sentence = data.get('target_sentence', '').lower().strip()
+        user_speech = data.get('user_speech', '').lower().strip()
+        if not user_speech:
+                 return jsonify({"error": "User speech is empty. Cannot generate accent score."}), 400
+        strictness = data.get('strictness', 'medium')
+
+        def preprocess_sentence(sentence):
+            return re.sub(r'[^\w\s]', '', sentence).strip()
+
+        target_sentence = preprocess_sentence(target_sentence)
+        user_speech = preprocess_sentence(user_speech)
+
+        def sentence_to_phonemes(sentence):
+            return [pronouncing.phones_for_word(word)[0] if pronouncing.phones_for_word(word) else "" for word in sentence.split()]
+
+        target_phonemes = sentence_to_phonemes(target_sentence)
+        user_phonemes = sentence_to_phonemes(user_speech)
+
+        if not target_phonemes or not user_phonemes:
+            return jsonify({"error": "Phoneme extraction failed."}), 400
+
+        def phoneme_similarity(p1, p2):
+            key_phonemes = {"TH", "S", "NG", "STH"}
+            penalty_factor = 1.5
+            seq_score = SequenceMatcher(None, p1, p2).ratio()
+            lev_score = ratio(p1, p2)
+            base_score = (lev_score * 0.7) + (seq_score * 0.3)
+            if p1 in key_phonemes and p1 != p2:
+                return base_score / penalty_factor
+            return base_score
+
+        correct = sum(phoneme_similarity(t, u) for t, u in zip(target_phonemes, user_phonemes))
+        total = len(target_phonemes)
+        accuracy = (correct / total) * 100 if total > 0 else 0
+
+        def check_key_phonemes(t_ph, u_ph):
+            key_phonemes = {"TH", "S", "NG", "STH"}
+            return all(p not in t_ph or p in u_ph for p in key_phonemes)
+
+        if not check_key_phonemes(target_phonemes, user_phonemes):
+            accuracy *= 0.7
+        if accuracy > 95:
+            accuracy *= 0.98
+        if strictness == "high" and accuracy < 95:
+            accuracy *= 0.85
+        elif strictness == "very_high" and accuracy < 98:
+            accuracy *= 0.75
+
+        accuracy = max(0, min(accuracy, 100))
+        similarity_score = fuzz.ratio(target_sentence, user_speech)
+
+        def word_match_ratio(ref, hypo):
+            ref_words = ref.split()
+            hypo_words = hypo.split()
+            matches = sum(1 for r, h in zip(ref_words, hypo_words) if r == h)
+            return (matches / len(ref_words)) * 100 if ref_words else 0
+
+        word_match = word_match_ratio(target_sentence, user_speech)
+
+        def flag_accent_mistakes(t_ph, u_ph):
+            accent_issues = []
+            confusions = {
+                "TH": ["D", "T"], "V": ["B", "W", "F"],
+                "L": ["R"], "R": ["L"],
+                "S": ["SH"], "Z": ["S"], "NG": ["N"]
+            }
+            for t, u in zip(t_ph, u_ph):
+                for key, wrongs in confusions.items():
+                    if key in t and any(conf in u for conf in wrongs):
+                        accent_issues.append(f"{key} → {u}")
+            return accent_issues
+
+        accent_mistakes = flag_accent_mistakes(target_phonemes, user_phonemes)
+
+        # ✅ Accent Score
+        temp_wav = f"user_audio_{uuid.uuid4().hex}.mp3"
+        gTTS(user_speech, lang='en').save(temp_wav)
+        processed = preprocess_audio(temp_wav, "processed.wav")
+        denoised = remove_noise("processed.wav")
+        user_mfcc = extract_mfcc(denoised)
+        reference_mfccs = generate_speech_if_not_exists(target_sentence, REFERENCE_AUDIO_FILES["male"])
+        _, accent_similarity = compare_with_multiple_references(user_mfcc, reference_mfccs)
+        accent_score = predict_score_from_similarity(accent_similarity)
+        os.remove(temp_wav)
+
+                # 🧹 Clean up intermediate files
+        try:
+            os.remove("processed.wav")
+            os.remove("denoised_processed.wav")
+        except FileNotFoundError:
+            pass  # Ignore if already cleaned or not created
+        except Exception as cleanup_err:
+            print("⚠️ Cleanup error:", cleanup_err)
+
+
+        return jsonify({
+            "target_phonemes": target_phonemes,
+            "user_phonemes": user_phonemes,
+            "transcription": user_speech,
+            "similarity": round(similarity_score, 2),
+            "word_match": round(word_match, 2),
+            "accuracy": round(accuracy, 2),
+            "strictness": strictness,
+            "accent_issues": accent_mistakes,
+            "accent_score": round(accent_score, 2),
+            "accent_similarity": round(accent_similarity, 2)
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 # ----------------- UI Pages -----------------
 @app.route('/')
@@ -50,130 +243,6 @@ def admin(): return render_template('admin.html')
 
 @app.route('/forget-password')
 def forget_password(): return render_template('forget-password.html')
-
-# ----------------- Audio Generation -----------------
-@app.route('/get_native_audio')
-def get_native_audio():
-    text = request.args.get('text', '')
-    if not text:
-        return jsonify({'error': 'No text provided'}), 400
-
-    tts = gTTS(text=text, lang='en')
-    temp_path = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3").name
-    tts.save(temp_path)
-    return send_file(temp_path, mimetype='audio/mpeg')
-
-# ----------------- Load Sentences -----------------
-@app.route('/get-test-sentences', methods=['GET'])
-def get_test_sentences():
-    try:
-        json_path = os.path.join(os.getcwd(), "static", "sentences.json")
-        if not os.path.exists(json_path):
-            return jsonify({"error": "sentences.json file not found!"}), 404
-        with open(json_path, "r", encoding="utf-8") as file:
-            data = json.load(file)
-        return jsonify(data)
-    except Exception as e:
-        return jsonify({"error": str(e)})
-
-# ----------------- Pronunciation Analysis -----------------
-@app.route('/analyze', methods=['POST'])
-def analyze_pronunciation():
-    try:
-        data = request.json
-        target_sentence = data.get('target_sentence', '').lower().strip()
-        user_speech = data.get('user_speech', '').lower().strip()
-        strictness = data.get('strictness', 'medium')
-
-        def preprocess_sentence(sentence):
-            return re.sub(r'[^\w\s]', '', sentence).strip()
-
-        target_sentence = preprocess_sentence(target_sentence)
-        user_speech = preprocess_sentence(user_speech)
-
-        def sentence_to_phonemes(sentence):
-            return [pronouncing.phones_for_word(word)[0] if pronouncing.phones_for_word(word) else "" for word in sentence.split()]
-
-        target_phonemes = sentence_to_phonemes(target_sentence)
-        user_phonemes = sentence_to_phonemes(user_speech)
-
-        if not target_phonemes or not user_phonemes:
-            return jsonify({"error": "Phoneme extraction failed. Check input sentences."}), 400
-
-        def phoneme_similarity(p1, p2):
-            key_phonemes = {"TH", "S", "NG", "STH"}
-            penalty_factor = 1.5
-            seq_score = SequenceMatcher(None, p1, p2).ratio()
-            lev_score = ratio(p1, p2)
-            base_score = (lev_score * 0.7) + (seq_score * 0.3)
-            if p1 in key_phonemes and p1 != p2:
-                return base_score / penalty_factor
-            return base_score
-
-        correct = sum(phoneme_similarity(t, u) for t, u in zip(target_phonemes, user_phonemes))
-        total = len(target_phonemes)
-        accuracy = (correct / total) * 100 if total > 0 else 0
-
-        def check_key_phonemes(t_ph, u_ph):
-            key_phonemes = {"TH", "S", "NG", "STH"}
-            for p in key_phonemes:
-                if p in t_ph and p not in u_ph:
-                    return False
-            return True
-
-        if not check_key_phonemes(target_phonemes, user_phonemes):
-            accuracy *= 0.7
-        if accuracy > 95:
-            accuracy *= 0.98
-        if strictness == "high" and accuracy < 95:
-            accuracy *= 0.85
-        elif strictness == "very_high" and accuracy < 98:
-            accuracy *= 0.75
-
-        accuracy = max(0, min(accuracy, 100))
-        similarity_score = fuzz.ratio(target_sentence, user_speech)
-
-        def word_match_ratio(ref, hypo):
-            ref_words = ref.split()
-            hypo_words = hypo.split()
-            matches = sum(1 for r, h in zip(ref_words, hypo_words) if r == h)
-            return (matches / len(ref_words)) * 100 if ref_words else 0
-
-        word_match = word_match_ratio(target_sentence, user_speech)
-
-        # ✅ Accent error detection
-        def flag_accent_mistakes(target_phonemes, user_phonemes):
-            accent_issues = []
-            common_confusions = {
-                "TH": ["D", "T"],
-                "V": ["B", "W", "F"],
-                "L": ["R"],
-                "R": ["L"],
-                "S": ["SH"],
-                "Z": ["S"],
-                "NG": ["N"]
-            }
-            for t, u in zip(target_phonemes, user_phonemes):
-                for key, confusions in common_confusions.items():
-                    if key in t and any(conf in u for conf in confusions):
-                        accent_issues.append(f"{key} → {u}")
-            return accent_issues
-
-        accent_mistakes = flag_accent_mistakes(target_phonemes, user_phonemes)
-
-        return jsonify({
-            "target_phonemes": target_phonemes,
-            "user_phonemes": user_phonemes,
-            "transcription": user_speech,
-            "similarity": round(similarity_score, 2),
-            "word_match": round(word_match, 2),
-            "accuracy": round(accuracy, 2),
-            "strictness": strictness,
-            "accent_issues": accent_mistakes
-        })
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
 
 # ----------------- Run -----------------
 if __name__ == '__main__':
