@@ -12,9 +12,18 @@ import noisereduce as nr
 from fastdtw import fastdtw
 from scipy.spatial.distance import euclidean
 from rapidfuzz import fuzz
+import openai
+
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 app = Flask(__name__)
 score_model = joblib.load("score_classifier_model.pkl")
+
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
 
 REFERENCE_AUDIO_FILES = {
     "male": {
@@ -73,8 +82,6 @@ def predict_score_from_similarity(similarity_percent):
     return score_model.predict(input_feature)[0]
 
 def generate_speech_if_not_exists(text, voices):
-    import openai
-    openai.api_key = "apikeyhere"
     reference_mfccs = {}
     for voice, file_path in voices.items():
         if not os.path.exists(file_path):
