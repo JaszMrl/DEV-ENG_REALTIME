@@ -36,6 +36,8 @@ let levelCorrectCount = 0;
 let levelSentenceCount = 0;
 let levelScoreHistory = [];
 let finalLevelCompleted = false; // ✅ NEW FLAG
+let levelEvaluationTriggered;
+let isNextLevelLocked = false;  // ✅ ADD THIS LINE
 
 async function loadSentences() {
     try {
@@ -276,7 +278,7 @@ function analyzeSpeech(targetSentence, userSpeech) {
         }
 
         usedSentences[levelKey].shift();
-        if (accuracy >= 85) levelCorrectCount++;
+        if (accuracy >= 85 && combinedScore >= 85) levelCorrectCount++;
         levelSentenceCount++;
 
         let accentFeedback = '';
@@ -315,11 +317,14 @@ function analyzeSpeech(targetSentence, userSpeech) {
             progressBar.value = levelSentenceCount;
         }
 
-        if (levelSentenceCount >= 5 && (levelCorrectCount / totalSentences) * 5 >= 3.5) {
+        const levelScore = (levelCorrectCount / totalSentences) * 5;
+
+        if (levelSentenceCount === totalSentences) {
             evaluateLevelProgress(userId);
-        } else if (levelSentenceCount === totalSentences) {
+        } else if (levelSentenceCount >= 5 && levelScore >= 3.5) {
             evaluateLevelProgress(userId);
         }
+
     })
     .catch(error => {
         console.error("❌ Error analyzing speech:", error);
@@ -347,6 +352,8 @@ function highlightDifferences(target, user) {
 }
 
 function evaluateLevelProgress(userId) {
+    if (levelEvaluationTriggered) return; // ✅ already triggered
+    levelEvaluationTriggered = true; // ✅ lock it now
     console.log("🧪 Checking level progression...");
     console.log("📍 Current Level Index:", currentLevelIndex);
 
@@ -442,39 +449,54 @@ function showLevelSummary(score) {
 }
 
 function nextLevel() {
-    hideLevelSummary();
-    document.getElementById("next-level-btn").style.display = "none";
+    if (isNextLevelLocked) {
+        console.warn("🚫 nextLevel() already triggered. Ignoring.");
+        return;
+    }
+    isNextLevelLocked = true; // ✅ Lock it now
+    console.log("👉 nextLevel() called");
+
+    const nextBtn = document.getElementById("next-level-btn");
+    if (nextBtn) {
+        nextBtn.disabled = true;
+        nextBtn.style.display = "none";
+    }
 
     if (currentLevelIndex >= levels.length - 1) return;
 
-    currentLevelIndex++;  // ✅ Increment before referencing anything with the new index
+    currentLevelIndex += 1;
+    levelEvaluationTriggered = false;
 
-    // ✅ Update UI to reflect new level
-    document.getElementById("current-level").textContent = levels[currentLevelIndex];
+    const levelDisplay = document.getElementById("current-level");
+    if (levelDisplay) levelDisplay.textContent = levels[currentLevelIndex];
 
-    // ✅ Reset all counters
+    console.log("➡️ Progressed to:", levels[currentLevelIndex]);
+
     levelCorrectCount = 0;
     levelSentenceCount = 0;
     usedSentences = {};
 
-    // ✅ Clear previous questions in Firestore
+    const userRef = db.collection("users").doc(auth.currentUser.uid);
+    userRef.set({ currentLevel: currentLevelIndex }, { merge: true });
+
     const previousKey = ["basic", "intermediateLow", "intermediateHigh", "advanced", "native"][currentLevelIndex - 1];
     db.collection("users").doc(auth.currentUser.uid).update({
         [`levelQuestions.${previousKey}`]: firebase.firestore.FieldValue.delete()
     });
 
-    // ✅ Save current level to user profile
-    const userRef = db.collection("users").doc(auth.currentUser.uid);
-    userRef.set({ currentLevel: currentLevelIndex }, { merge: true });
-
-    // ✅ Reset score UI
     document.getElementById("normalized-score").textContent = '0.00';
     document.getElementById("raw-score-detail").textContent = '(Correct: 0 / 0)';
     document.getElementById("accent-similarity").innerHTML = "";
     document.getElementById("level-score-ui").style.display = "block";
 
-    generateSentence();  // ✅ Load first question in new level
+    generateSentence();
+
+    // ✅ Unlock after 500ms (just to be safe from double-clicks)
+    setTimeout(() => {
+        isNextLevelLocked = false;
+    }, 500);
 }
+
 
 
 function showFinalScore(scoreOutOf25) {
@@ -537,7 +559,7 @@ function resetUserLevel() {
     }
   }  
 
-document.addEventListener("DOMContentLoaded", function () {
+  document.addEventListener("DOMContentLoaded", function () {
     initializeSpeechRecognition();
     loadSentences();
 
@@ -553,12 +575,20 @@ document.addEventListener("DOMContentLoaded", function () {
                     currentLevelIndex = 0;
                     document.getElementById("current-level").textContent = levels[0];
                 }
-            });    
+            });
 
-            // Button listeners for logged-in users
+            // ✅ Bind once only
+            const btn = document.getElementById("next-level-btn");
+            if (btn) {
+                const newBtn = btn.cloneNode(true); // remove all listeners
+                btn.parentNode.replaceChild(newBtn, btn);
+                newBtn.addEventListener("click", nextLevel);
+            }
+
             document.getElementById("generate-btn")?.addEventListener("click", generateSentence);
             document.getElementById("start-speech-btn")?.addEventListener("click", () => startSpeechRecognition(user.uid));
         }
     });
 });
+
 

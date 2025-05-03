@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, render_template, send_file, after_this_request
-import os, json, re, tempfile, uuid
+import os, re, uuid
 from difflib import SequenceMatcher
 from Levenshtein import ratio
 from gtts import gTTS
@@ -74,13 +74,9 @@ def predict_score_from_similarity(similarity_percent):
     input_feature = np.array([[similarity_percent]])
     return score_model.predict(input_feature)[0]
 
-from dotenv import load_dotenv
-
 def generate_speech_if_not_exists(text, voices):
-    import os
     load_dotenv()
     openai.api_key = os.getenv("OPENAI_API_KEY")
-    
     reference_mfccs = {}
     for voice, file_path in voices.items():
         if not os.path.exists(file_path):
@@ -91,9 +87,7 @@ def generate_speech_if_not_exists(text, voices):
             )
             with open(file_path, "wb") as f:
                 f.write(response.content)
-        
         reference_mfccs[voice] = extract_mfcc(file_path)
-    
     return reference_mfccs
 
 # ----------------- Analyze Route -----------------
@@ -104,18 +98,17 @@ def analyze_pronunciation():
         target_sentence = data.get('target_sentence', '').lower().strip()
         user_speech = data.get('user_speech', '').lower().strip()
         if not user_speech:
-                 return jsonify({"error": "User speech is empty. Cannot generate accent score."}), 400
+            return jsonify({"error": "User speech is empty. Cannot generate accent score."}), 400
         strictness = data.get('strictness', 'medium')
 
         def preprocess_sentence(sentence):
             return re.sub(r'[^\w\s]', '', sentence).strip()
 
-        target_sentence = preprocess_sentence(target_sentence)
-        user_speech = preprocess_sentence(user_speech)
-
         def sentence_to_phonemes(sentence):
             return [pronouncing.phones_for_word(word)[0] if pronouncing.phones_for_word(word) else "" for word in sentence.split()]
 
+        target_sentence = preprocess_sentence(target_sentence)
+        user_speech = preprocess_sentence(user_speech)
         target_phonemes = sentence_to_phonemes(target_sentence)
         user_phonemes = sentence_to_phonemes(user_speech)
 
@@ -175,7 +168,7 @@ def analyze_pronunciation():
 
         accent_mistakes = flag_accent_mistakes(target_phonemes, user_phonemes)
 
-        # ✅ Accent Score
+        # Accent Score
         temp_wav = f"user_audio_{uuid.uuid4().hex}.mp3"
         gTTS(user_speech, lang='en').save(temp_wav)
         processed = preprocess_audio(temp_wav, "processed.wav")
@@ -186,15 +179,11 @@ def analyze_pronunciation():
         accent_score = predict_score_from_similarity(accent_similarity)
         os.remove(temp_wav)
 
-                # 🧹 Clean up intermediate files
         try:
             os.remove("processed.wav")
             os.remove("denoised_processed.wav")
-        except FileNotFoundError:
-            pass  # Ignore if already cleaned or not created
         except Exception as cleanup_err:
             print("⚠️ Cleanup error:", cleanup_err)
-
 
         return jsonify({
             "target_phonemes": target_phonemes,
@@ -208,11 +197,11 @@ def analyze_pronunciation():
             "accent_score": round(accent_score, 2),
             "accent_similarity": round(accent_similarity, 2)
         })
-    
+
     except Exception as e:
         return jsonify({"error": f"Server error: {str(e)}"}), 500
 
-    
+# ----------------- TTS Endpoint -----------------
 @app.route('/get_native_audio')
 def get_native_audio():
     try:
