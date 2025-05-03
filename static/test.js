@@ -39,6 +39,7 @@ let finalLevelCompleted = false; // ✅ NEW FLAG
 let levelEvaluationTriggered;
 let isNextLevelLocked = false;  // ✅ ADD THIS LINE
 
+
 async function loadSentences() {
     try {
         const snapshot = await db.collection("sentences").get();
@@ -475,6 +476,10 @@ function nextLevel() {
     levelCorrectCount = 0;
     levelSentenceCount = 0;
     usedSentences = {};
+
+     // ✅ Hide the score UI here:
+    const scoreBox = document.getElementById("level-score-ui");
+    if (scoreBox) scoreBox.style.display = "none";
 
     const userRef = db.collection("users").doc(auth.currentUser.uid);
     userRef.set({ currentLevel: currentLevelIndex }, { merge: true });
