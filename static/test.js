@@ -61,9 +61,6 @@ async function loadSentences() {
 
 function generateSentence() {
     document.getElementById("test-result").innerHTML = ""; // ✅ clear test result
-    document.getElementById("accent-score").innerHTML = ""; // ✅ clear accent score
-    document.getElementById("accent-similarity").innerHTML = ""; // ✅ clear accent similarity
-
     if (finalLevelCompleted) {
         const scoreUI = document.getElementById("level-score-ui");
         if (scoreUI) scoreUI.style.display = "none";
@@ -207,6 +204,21 @@ function stopSpeechRecognition() {
     document.getElementById("stop-speech-btn").disabled = true;
 }
 
+function playNativeCustom() {
+    const audio = document.getElementById("nativeAudio");
+    if (!audio.src) {
+        alert("❌ No native audio available.");
+        return;
+    }
+    audio.play().catch(() => {
+        alert("❌ Audio cannot be played.");
+    });
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    document.getElementById("next-level-btn")?.addEventListener("click", nextLevel);
+});
+
 function analyzeSpeech(targetSentence, userSpeech) {
     const user = auth.currentUser;
     const userId = user?.uid || null;
@@ -236,37 +248,37 @@ function analyzeSpeech(targetSentence, userSpeech) {
             throw new Error(err.error || "Server error");
         }
         return res.json();
-    })    
+    })
     .then(result => {
         const accuracy = result.accuracy || 0;
         const transcription = result.transcription || '';
         const similarity = result.similarity || 0;
         const wordMatch = result.word_match || 0;
         const accentMistakes = result.accent_issues || [];
-        const accentScore = result.accent_score || 0;
         const accentSimilarity = result.accent_similarity || 0;
+        const combinedScore = (accuracy + accentSimilarity) / 2;
 
 
-        // ✅ Reject if unclear speech or mismatched words
+        // ✅ Set native audio for playback
+        if (result.audio_url) {
+            document.getElementById("nativeAudio").src = result.audio_url;
+        }
+
         if (transcription.trim() === '' || similarity < 60 || wordMatch < 80) {
             document.getElementById("test-result").innerHTML = `
                 <p style="color: red; font-weight: bold;">⚠️ Your sentence didn’t match well enough. Please try again.</p>
                 <p><strong>Transcribed:</strong> "${transcription}"</p>
                 <p><strong>Similarity:</strong> ${similarity.toFixed(2)}%</p>
                 <p><strong>Word Match:</strong> ${wordMatch.toFixed(2)}%</p>
-                <p><strong>Accent Score:</strong> ${accentScore.toFixed(2)} / 5</p>
-                <p><strong>Accent Similarity:</strong> ${accentSimilarity.toFixed(2)}%</p>
-
+                <p style="color: #1976d2;"><strong>🧮 Combined Score:</strong> ${combinedScore.toFixed(2)}%</p>
             `;
             return;
         }
 
-        // ✅ Accept attempt
         usedSentences[levelKey].shift();
         if (accuracy >= 85) levelCorrectCount++;
         levelSentenceCount++;
 
-        // ✅ Accent tips (if any)
         let accentFeedback = '';
         if (accentMistakes.length > 0 && accuracy < 80) {
             const tips = accentMistakes.map(pair => {
@@ -282,23 +294,20 @@ function analyzeSpeech(targetSentence, userSpeech) {
                     Try improving these sounds: ${uniqueTips.join(', ')}
                 </p>
             `;
-        }          
+        }
 
         const highlighted = highlightDifferences(targetSentence, transcription);
 
         document.getElementById("test-result").innerHTML = `
             <p><strong>Target Sentence:</strong> "${targetSentence}"</p>
             <p><strong>Your Speech:</strong> ${highlighted}</p>
-            <p><strong>Pronunciation Accuracy:</strong> ${accuracy.toFixed(2)}%</p>
             <p><strong>Word Match:</strong> ${wordMatch.toFixed(2)}%</p>
+            <p style="color: #1976d2;"><strong>🧮 Combined Score:</strong> ${combinedScore.toFixed(2)}%</p>
             ${accentFeedback}
         `;
 
         document.getElementById("raw-score-detail").textContent = `(Correct: ${levelCorrectCount} / ${totalSentences})`;
         document.getElementById("normalized-score").textContent = ((levelCorrectCount / totalSentences) * 5).toFixed(2);
-        document.getElementById("accent-score").innerHTML = `<strong>Accent Score:</strong> ${accentScore.toFixed(2)} / 5`;
-        document.getElementById("accent-similarity").innerHTML = `<strong>Accent Similarity:</strong> ${accentSimilarity.toFixed(2)}%`;
-
 
         const progressBar = document.getElementById('level-progress');
         if (progressBar) {
@@ -315,7 +324,7 @@ function analyzeSpeech(targetSentence, userSpeech) {
     .catch(error => {
         console.error("❌ Error analyzing speech:", error);
         alert("❌ Failed to analyze speech: " + error.message);
-    });    
+    });
 }
 
 function highlightDifferences(target, user) {
@@ -438,31 +447,33 @@ function nextLevel() {
 
     if (currentLevelIndex >= levels.length - 1) return;
 
-    currentLevelIndex++;
+    currentLevelIndex++;  // ✅ Increment before referencing anything with the new index
+
+    // ✅ Update UI to reflect new level
     document.getElementById("current-level").textContent = levels[currentLevelIndex];
 
+    // ✅ Reset all counters
     levelCorrectCount = 0;
     levelSentenceCount = 0;
     usedSentences = {};
 
-    const userRef = db.collection("users").doc(auth.currentUser.uid);
-    userRef.set({ currentLevel: currentLevelIndex }, { merge: true });
-
-    // 🧹 Clean up last level's questions
+    // ✅ Clear previous questions in Firestore
     const previousKey = ["basic", "intermediateLow", "intermediateHigh", "advanced", "native"][currentLevelIndex - 1];
     db.collection("users").doc(auth.currentUser.uid).update({
         [`levelQuestions.${previousKey}`]: firebase.firestore.FieldValue.delete()
     });
 
-    // 🔁 Reset UI
+    // ✅ Save current level to user profile
+    const userRef = db.collection("users").doc(auth.currentUser.uid);
+    userRef.set({ currentLevel: currentLevelIndex }, { merge: true });
+
+    // ✅ Reset score UI
     document.getElementById("normalized-score").textContent = '0.00';
     document.getElementById("raw-score-detail").textContent = '(Correct: 0 / 0)';
-    document.getElementById("test-result").innerHTML = ""; // ✅ clear test result
-    document.getElementById("accent-score").innerHTML = ""; // ✅ clear accent score
-    document.getElementById("accent-similarity").innerHTML = ""; // ✅ clear accent similarity
+    document.getElementById("accent-similarity").innerHTML = "";
     document.getElementById("level-score-ui").style.display = "block";
 
-    generateSentence();
+    generateSentence();  // ✅ Load first question in new level
 }
 
 

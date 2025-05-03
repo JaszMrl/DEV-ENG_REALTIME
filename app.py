@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, send_file
+from flask import Flask, request, jsonify, render_template, send_file, after_this_request
 import os, json, re, tempfile, uuid
 from difflib import SequenceMatcher
 from Levenshtein import ratio
@@ -12,6 +12,8 @@ import noisereduce as nr
 from fastdtw import fastdtw
 from scipy.spatial.distance import euclidean
 from rapidfuzz import fuzz
+from dotenv import load_dotenv
+import openai
 
 app = Flask(__name__)
 score_model = joblib.load("score_classifier_model.pkl")
@@ -72,9 +74,13 @@ def predict_score_from_similarity(similarity_percent):
     input_feature = np.array([[similarity_percent]])
     return score_model.predict(input_feature)[0]
 
+from dotenv import load_dotenv
+
 def generate_speech_if_not_exists(text, voices):
-    import openai
-    openai.api_key = "apikeyhere"
+    import os
+    load_dotenv()
+    openai.api_key = os.getenv("OPENAI_API_KEY")
+    
     reference_mfccs = {}
     for voice, file_path in voices.items():
         if not os.path.exists(file_path):
@@ -85,7 +91,9 @@ def generate_speech_if_not_exists(text, voices):
             )
             with open(file_path, "wb") as f:
                 f.write(response.content)
+        
         reference_mfccs[voice] = extract_mfcc(file_path)
+    
     return reference_mfccs
 
 # ----------------- Analyze Route -----------------
@@ -200,9 +208,32 @@ def analyze_pronunciation():
             "accent_score": round(accent_score, 2),
             "accent_similarity": round(accent_similarity, 2)
         })
+    
+    except Exception as e:
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
+
+    
+@app.route('/get_native_audio')
+def get_native_audio():
+    try:
+        text = request.args.get("text", "").strip()
+        if not text:
+            return "Missing text", 400
+
+        filename = f"tts_{uuid.uuid4().hex}.mp3"
+        tts = gTTS(text, lang="en")
+        tts.save(filename)
+
+        @after_this_request
+        def remove_file(response):
+            try: os.remove(filename)
+            except: pass
+            return response
+
+        return send_file(filename, mimetype="audio/mpeg", as_attachment=False)
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        return f"Error generating audio: {str(e)}", 500
 
 # ----------------- UI Pages -----------------
 @app.route('/')
