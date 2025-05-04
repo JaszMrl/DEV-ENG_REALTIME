@@ -196,26 +196,30 @@
           <button class="word-button" onclick="playWord('hat')">hat</button>
           <button class="word-button" onclick="playWord('hate')">hate</button>
         </div>
-
-        <div class="section try-section">
-          <h3>🎤 Try It Yourself</h3>
-          <input id="tryWord" placeholder="Enter a vowel word like 'bit' or 'beat'">
-          <button onclick="playNativeTry()">🔊 Hear</button>
-          <button onclick="startTrySpeech()">🎙️ Speak</button>
-          <p id="listening-indicator">🎙️ Now Listening… Speak clearly.</p>
-          <p id="try-feedback" class="practice-feedback"></p>
-        </div>
-
-        <div class="section" id="quiz-section">
-          <h3>🧪 Practice Mini Quiz</h3>
-          <div id="quiz-card">
-            <p><strong>Word <span id="quiz-num">1</span>/5:</strong> <span id="quiz-word">bit</span></p>
-            <button onclick="playCurrentQuizWord()">🔊 Hear</button>
-            <button onclick="startQuizSpeech()">🎤 Speak</button>
-            <p id="quiz-listening-indicator" style="display:none; font-weight: bold; color: #007BFF;">🎙️ Now Listening… Speak clearly.</p>
-            <p id="quiz-feedback" class="practice-feedback"></p>
-            <button id="next-quiz-btn" onclick="nextQuizWord()" style="display: none;">➡️ Next</button>
+        <div class="section" id="practice-section">
+          <h3>🎯 Practice Vowel Words</h3>
+          <p><strong>Word:</strong> <span id="practice-word">bit</span></p>
+        
+          <div style="margin-bottom: 10px;">
+            <button onclick="playPracticeWord()">🔊 Hear</button>
+            <button onclick="startPracticeSpeech()">🎙 Start</button>
+            <button onclick="stopPracticeSpeech()">🛑 Stop</button>
+            <button onclick="nextPracticeWord()">➡️ Next</button>
           </div>
+        
+          <p id="practice-listening-indicator" style="display:none; font-weight: bold; color: #007BFF;">🎙️ Listening...</p>
+          <p id="practice-feedback" class="practice-feedback"></p>
+        
+          <div style="width: 100%; margin-top: 20px;">
+            <div style="height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden;">
+              <div id="practice-progress" style="height: 8px; width: 0%; background: #3B82F6; transition: width 0.3s;"></div>
+            </div>
+            <p style="font-size: 0.8rem; text-align: right; margin-top: 4px;">
+              <span id="progress-count">1</span> / <span id="progress-total">6</span>
+            </p>
+          </div>
+        </div>        
+        
            <!-- Back to Lessons Button -->
         <div class="section" style="text-align: center; margin-top: 40px;">
           <a href="{{ url_for('learn') }}" style="
@@ -233,144 +237,127 @@
       </div>
     </div>
   </div>
-
   <script>
-    const allQuizWords = [
-      "bit", "beat", "hat", "hate", "pit", "peat", "cat", "kite", "sit", "seat",
-      "kit", "cute", "not", "note", "bad", "bed", "boot", "put", "hit", "hot"
-    ];
-
-    function shuffle(array) {
-      for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
+    const practiceWords = ["bit", "beat", "hat", "hate", "pit", "peat", "cat", "kite", "sit", "seat"];
+    let practiceIndex = 0;
+    let practiceRecognition;
+    let practiceCorrectCount = 0;
+  
+    function getSimilarity(str1, str2) {
+      const s1 = str1.toLowerCase().trim();
+      const s2 = str2.toLowerCase().trim();
+      if (s1 === s2) return 100;
+      let matches = 0;
+      const minLen = Math.min(s1.length, s2.length);
+      for (let i = 0; i < minLen; i++) {
+        if (s1[i] === s2[i]) matches++;
       }
-      return array;
+      return (matches / Math.max(s1.length, s2.length)) * 100;
     }
-
-    const quizWords = shuffle([...allQuizWords]).slice(0, 5);
-    let quizIndex = 0;
-
+  
     function playWord(word) {
       fetch('/get_native_audio?text=' + word)
         .then(res => res.blob())
         .then(blob => {
           const audio = new Audio(URL.createObjectURL(blob));
           audio.play();
-        });
+        })
+        .catch(err => console.error("🎧 Error fetching audio:", err));
     }
-
-    function playNativeTry() {
-      const word = document.getElementById("tryWord").value.trim();
-      if (!word) return alert("Enter a word first!");
+  
+    function playPracticeWord() {
+      const word = practiceWords[practiceIndex];
       playWord(word);
     }
-
-    function startTrySpeech() {
-      const target = document.getElementById("tryWord").value.trim();
-      const indicator = document.getElementById("listening-indicator");
-      if (!target) return alert("Enter a word first!");
-
-      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-      recognition.lang = 'en-US';
-      recognition.interimResults = false;
-
+  
+    function startPracticeSpeech() {
+      const expected = practiceWords[practiceIndex];
+      const indicator = document.getElementById("practice-listening-indicator");
+      const feedback = document.getElementById("practice-feedback");
+  
+      practiceRecognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      practiceRecognition.lang = 'en-US';
+      practiceRecognition.interimResults = false;
+  
       indicator.style.display = 'block';
-
-      recognition.onresult = (event) => {
+      feedback.textContent = '';
+  
+      practiceRecognition.onresult = (event) => {
         const spoken = event.results[0][0].transcript.toLowerCase().trim().replace(/[.,!?]/g, "");
-        const feedback = document.getElementById("try-feedback");
-        indicator.style.display = 'none';
-
-        if (spoken === target.toLowerCase()) {
-          feedback.textContent = `✅ Good job! You said: ${spoken}`;
+        const similarity = getSimilarity(spoken, expected);
+  
+        if (similarity >= 80) {
+          feedback.textContent = `✅ Correct! You said: "${spoken}"`;
+          practiceCorrectCount++;
         } else {
-          feedback.textContent = `❌ Try again. You said: ${spoken}`;
+          feedback.textContent = `❌ Try again. You said: "${spoken}"`;
         }
-      };
-
-      recognition.onerror = () => {
+  
         indicator.style.display = 'none';
+  
+        // Auto-advance to next word after 2 seconds
+        setTimeout(() => {
+          nextPracticeWord();
+        }, 2000);
       };
-      recognition.onend = () => {
-        indicator.style.display = 'none';
-      };
-      recognition.start();
-    }
-
-    function loadQuizWord() {
-      const word = quizWords[quizIndex];
-      document.getElementById('quiz-word').textContent = word;
-      document.getElementById('quiz-num').textContent = quizIndex + 1;
-      document.getElementById('quiz-feedback').textContent = '';
-      document.getElementById('next-quiz-btn').style.display = 'none';
-    }
-
-    function playCurrentQuizWord() {
-      const word = quizWords[quizIndex];
-      playWord(word);
-    }
-
-    function startQuizSpeech() {
-      const expected = quizWords[quizIndex];
-      const feedback = document.getElementById('quiz-feedback');
-      const indicator = document.getElementById('quiz-listening-indicator');
-
-      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-      recognition.lang = 'en-US';
-      recognition.interimResults = false;
-
-      indicator.style.display = 'block';
-
-      recognition.onresult = (event) => {
-        const spoken = event.results[0][0].transcript.toLowerCase().trim().replace(/[.,!?]/g, "");
-        const expectedClean = expected.toLowerCase().trim();
-
-        if (spoken === expectedClean) {
-          feedback.textContent = "✅ Correct!";
-        } else {
-          feedback.textContent = `❌ You said: ${spoken}`;
-        }
-
-        indicator.style.display = 'none';
-        document.getElementById('next-quiz-btn').style.display = 'inline-block';
-      };
-
-      recognition.onerror = () => {
+  
+      practiceRecognition.onerror = () => {
         indicator.style.display = 'none';
         feedback.textContent = "⚠️ Could not recognize speech.";
-        document.getElementById('next-quiz-btn').style.display = 'inline-block';
       };
-
-      recognition.onend = () => {
+  
+      practiceRecognition.onend = () => {
         indicator.style.display = 'none';
       };
-
-      recognition.start();
+  
+      practiceRecognition.start();
     }
-
-    function nextQuizWord() {
-      quizIndex++;
-      if (quizIndex >= quizWords.length) {
-        document.getElementById('quiz-card').innerHTML = "<h4>🎉 Great job! You've completed the quiz.</h4>";
-      } else {
-        loadQuizWord();
+  
+    function stopPracticeSpeech() {
+      if (practiceRecognition) {
+        practiceRecognition.stop();
       }
     }
-
-    function markLessonComplete(lessonNum) {
-    const user = firebase.auth().currentUser;
-    if (user) {
-      firebase.firestore().collection("users").doc(user.uid).set({
-        [`lessons.lesson${lessonNum}`]: true
-      }, { merge: true });
-    } else {
-      // Optional: use localStorage for guests
-      localStorage.setItem(`lesson${lessonNum}_complete`, "true");
+  
+    function nextPracticeWord() {
+      practiceIndex++;
+      if (practiceIndex >= practiceWords.length) {
+        showPracticeResult();
+      } else {
+        updatePracticeUI();
+      }
     }
-  }
-
-    window.addEventListener('DOMContentLoaded', loadQuizWord);
+  
+    function updatePracticeUI() {
+      document.getElementById("practice-word").textContent = practiceWords[practiceIndex];
+      document.getElementById("practice-feedback").textContent = '';
+      document.getElementById("progress-count").textContent = practiceIndex + 1;
+      document.getElementById("progress-total").textContent = practiceWords.length;
+      const percent = ((practiceIndex + 1) / practiceWords.length) * 100;
+      document.getElementById("practice-progress").style.width = percent + "%";
+    }
+  
+    function showPracticeResult() {
+      const section = document.getElementById("practice-section");
+      section.innerHTML = `
+        <h3>🎉 Practice Complete!</h3>
+        <p>You got <strong>${practiceCorrectCount}/${practiceWords.length}</strong> correct.</p>
+        <button onclick="restartPractice()">🔁 Try Again</button>
+      `;
+    }
+  
+    function restartPractice() {
+      practiceIndex = 0;
+      practiceCorrectCount = 0;
+      document.getElementById("practice-section").innerHTML = originalPracticeHTML;
+      updatePracticeUI();
+    }
+  
+    // Store original HTML for restart
+    let originalPracticeHTML = "";
+    window.addEventListener('DOMContentLoaded', () => {
+      originalPracticeHTML = document.getElementById("practice-section").innerHTML;
+      updatePracticeUI();
+    });
   </script>
-</body>
-</html>
+  

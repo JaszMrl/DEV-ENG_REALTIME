@@ -39,6 +39,40 @@ function normalizeText(text) {
         .replace(/[^\w\s]/g, '') // remove punctuation
         .trim();
 }
+// ✅ Show "Last Test" Info on Dashboard
+function loadRecentActivity() {
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            const userRef = db.collection("users").doc(user.uid);
+            userRef.get().then(doc => {
+                const recentActivity = document.getElementById("recent-activity");
+                if (recentActivity && doc.exists) {
+                    const data = doc.data();
+                    const lastDate = data.lastTestDate;
+                    const lastLevel = data.lastTestLevel;
+
+                    if (lastDate && lastLevel) {
+                        const formatted = new Date(lastDate).toLocaleDateString("en-US", {
+                            weekday: "short",
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric"
+                        });
+                        recentActivity.textContent = `Last test: ${lastLevel} on ${formatted}`;
+                    } else {
+                        recentActivity.textContent = "No recent test";
+                    }
+                }
+            }).catch(err => {
+                console.error("❌ Error loading last test info:", err);
+            });
+        }
+    });
+}
+
+// ✅ Load this on page load
+window.addEventListener("DOMContentLoaded", loadRecentActivity);
+
 
 let sentences = { basic: [], intermediateLow: [], intermediateHigh: [], advanced: [], native: [] };
 let levels = ["Basic/Beginner", "Intermediate Low", "Intermediate High", "Advanced", "Native/Fluent"];
@@ -86,7 +120,8 @@ async function loadSentences() {
 }
 
 function generateSentence() {
-    document.getElementById("test-result").innerHTML = ""; // ✅ clear test result
+    document.getElementById("test-result").innerHTML = "";
+
     if (finalLevelCompleted) {
         const scoreUI = document.getElementById("level-score-ui");
         if (scoreUI) scoreUI.style.display = "none";
@@ -98,19 +133,15 @@ function generateSentence() {
     const user = auth.currentUser;
     const levelKey = ["basic", "intermediateLow", "intermediateHigh", "advanced", "native"][currentLevelIndex];
 
-    if (usedSentences[levelKey] && usedSentences[levelKey].length === 0) {
-        document.getElementById("test-sentence").textContent = "✅ You've completed all 10 questions!";
-        document.getElementById("start-speech-btn").disabled = true;
+    // ✅ Ensure sentences are loaded
+    if (!sentences || !sentences[levelKey] || sentences[levelKey].length === 0) {
+        document.getElementById("test-sentence").textContent = "⚠️ Sentences are still loading...";
         return;
     }
 
+    // ✅ Setup sentence queue if not done yet
     if (!usedSentences[levelKey]) {
         const fullSet = sentences[levelKey];
-        if (!fullSet || fullSet.length < 10) {
-            document.getElementById("test-sentence").textContent = "❌ Not enough sentences for this level.";
-            return;
-        }
-
         const selected = [...fullSet].sort(() => Math.random() - 0.5).slice(0, 10);
         usedSentences[levelKey] = [...selected];
 
@@ -129,8 +160,11 @@ function generateSentence() {
         return;
     }
 
+    // ✅ Display next sentence
     document.getElementById("test-sentence").textContent = remaining[0];
     document.getElementById("start-speech-btn").disabled = false;
+
+    console.log("📜 Sentence for", levelKey, "→", remaining[0]);
 }
 
 function initializeSpeechRecognition() {
@@ -300,7 +334,7 @@ function analyzeSpeech(targetSentence, userSpeech) {
         }
 
         usedSentences[levelKey].shift();
-        if (accuracy >= 85 && combinedScore >= 80) levelCorrectCount++;
+        if (accuracy >= 85 && combinedScore >= 50) levelCorrectCount++;
         levelSentenceCount++;
 
         let accentFeedback = '';
@@ -400,33 +434,45 @@ function evaluateLevelProgress(userId) {
         [`levelScores.${levelName}`]: levelScore
     }, { merge: true });
 
-    levelScoreHistory.push(levelScore);
-    console.log("📊 Level score history:", levelScoreHistory);
+    levelScoreHistory.push(levelScore);  // ✅ Always store this
 
-    // 🏁 Final level
     if (currentLevelIndex === levels.length - 1) {
         const total = levelScoreHistory.reduce((a, b) => a + b, 0);
         const finalScore = parseFloat(total.toFixed(2));
-
         finalLevelCompleted = true;
-
+    
         document.getElementById("level-score-ui").style.display = "none";
         document.getElementById("test-result-summary").style.display = "none";
         showFinalScore(finalScore);
-
+    
+        const userRef = db.collection("users").doc(userId);
+        const levelName = levels[currentLevelIndex];
+        
         userRef.set({
-            score: finalScore,
-            isCompleted: true
-        }, { merge: true });
-
+            [`levelScores.${levelName}`]: levelScore,
+            lastTestDate: new Date().toISOString(),
+            lastTestLevel: levelName  // ✅ <-- add this line
+        }, { merge: true });            
+        
         document.getElementById("next-level-btn").style.display = "none";
         return;
-    }
-
-    // ✅ Only allow moving on if passed
-    if (levelScore >= 3.5) {
-        showLevelSummary(levelScore);
-    }
+    }    
+        if (currentLevelIndex === levels.length - 1) {
+            // [Your existing final-level logic]
+            return;
+        }
+        
+        // ✅ Only allow saving last test if passed
+        if (levelScore >= 3.5) {
+            userRef.set({
+                lastTestDate: new Date().toISOString(),
+                lastTestLevel: levelName
+            }, { merge: true }).then(() => {
+                console.log("✅ Saved recent activity:", levelName);
+            });
+        
+            showLevelSummary(levelScore);
+        }
 }
 
 function hideLevelSummary() {
@@ -473,7 +519,7 @@ function nextLevel() {
         console.warn("🚫 nextLevel() already triggered. Ignoring.");
         return;
     }
-    isNextLevelLocked = true;  // lock immediately
+    isNextLevelLocked = true;
 
     const nextBtn = document.getElementById("next-level-btn");
     if (nextBtn) {
@@ -491,16 +537,21 @@ function nextLevel() {
 
     console.log("➡️ Progressed to:", levels[currentLevelIndex]);
 
+    // 🔄 Reset tracking
     levelCorrectCount = 0;
     levelSentenceCount = 0;
+
+    // ❗ Clear previous level's sentence memory
     usedSentences = {};
 
-    const normalizedScore = document.getElementById("normalized-score");
-    if (normalizedScore) normalizedScore.textContent = '0.00';
+    // 🧼 Reset score display
+    document.getElementById("normalized-score").textContent = '0.00';
+    document.getElementById("raw-score-detail").textContent = '(Correct: 0 / 0)';
+    //document.getElementById("accent-similarity").innerHTML = "";
+    document.getElementById("test-result-summary").style.display = "none";
+    document.getElementById("level-score-ui").style.display = "block";
 
-    const rawScore = document.getElementById("raw-score-detail");
-    if (rawScore) rawScore.textContent = '(Correct: 0 / 0)';
-
+    // 🧠 Save to Firestore
     const user = auth.currentUser;
     if (user) {
         const userRef = db.collection("users").doc(user.uid);
@@ -516,11 +567,11 @@ function nextLevel() {
 
     generateSentence();
 
-    // ✅ Re-enable after short delay
     setTimeout(() => {
         isNextLevelLocked = false;
     }, 500);
 }
+
 
 function showFinalScore(scoreOutOf25) {
     const box = document.getElementById("final-score-summary");

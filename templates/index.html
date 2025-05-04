@@ -267,41 +267,91 @@
         </div>
       </div>
     </div>
-<script>
-    let startTime;
-    let timerInterval;
+    <script>
+      let startTime;
+      let timerInterval;
 
-    function updateTimer() {
-      const now = new Date();
-      const elapsedSeconds = Math.floor((now - startTime) / 1000);
-      const days = Math.floor(elapsedSeconds / (24 * 3600));
-      const hours = Math.floor((elapsedSeconds % (24 * 3600)) / 3600);
-      const minutes = Math.floor((elapsedSeconds % 3600) / 60);
-      const seconds = elapsedSeconds % 60;
-      document.getElementById('timer').textContent =
-        (days < 10 ? '0' + days : days) + " days " +
-        (hours < 10 ? '0' + hours : hours) + ':' +
-        (minutes < 10 ? '0' + minutes : minutes) + ':' +
-        (seconds < 10 ? '0' + seconds : seconds);
+      function loadRecentActivity() {
+      auth.onAuthStateChanged(user => {
+    if (!user) {
+      console.warn("🚫 No user logged in.");
+      return;
     }
 
-    // อ่านค่า startTime จาก localStorage เมื่อโหลดหน้า timer.html
-    if (localStorage.getItem('startTime')) {
-      startTime = new Date(localStorage.getItem('startTime'));
-      timerInterval = setInterval(updateTimer, 1000);
-    } else {
-      document.getElementById('timer').textContent = 'ยังไม่ได้เริ่มทำแบบทดสอบ';
-    }
+    const userRef = db.collection("users").doc(user.uid);
+    userRef.get().then(doc => {
+      if (!doc.exists) {
+        console.warn("❌ No user document found.");
+        return;
+      }
 
-    // ฟังก์ชันรีเซ็ตเวลา: ลบค่า startTime ใน localStorage แล้วรีเฟรชหน้า
-    document.querySelector('.Reset-timer').addEventListener('click', function() {
-      clearInterval(timerInterval);
-      localStorage.removeItem('startTime');
-      alert('รีเซ็ตเวลาแล้ว');
-      location.reload();
+      const data = doc.data();
+      const recentActivity = document.getElementById("recent-activity");
+
+      if (!recentActivity) {
+        console.warn("⚠️ #recent-activity not found in DOM.");
+        return;
+      }
+
+      const lastTestDate = data.lastTestDate;
+      const lastTestLevel = data.lastTestLevel;
+
+      if (lastTestDate && lastTestLevel) {
+        const date = new Date(lastTestDate);
+        const formattedDate = date.toLocaleDateString("en-US", {
+          weekday: "short",
+          year: "numeric",
+          month: "short",
+          day: "numeric"
+        });
+        recentActivity.textContent = `Last test: ${lastTestLevel} on ${formattedDate}`;
+      } else if (lastTestLevel) {
+        recentActivity.textContent = `Last test: ${lastTestLevel}`;
+      } else if (lastTestDate) {
+        const date = new Date(lastTestDate);
+        const formatted = date.toLocaleDateString("en-US", {
+          weekday: "short",
+          year: "numeric",
+          month: "short",
+          day: "numeric"
+        });
+        recentActivity.textContent = `Last test date: ${formatted}`;
+      } else {
+        recentActivity.textContent = "No recent test";
+      }
     });
-    // ✅ Firebase Configuration
-    const firebaseConfig = {
+  });
+}
+    
+      function updateTimer() {
+        const now = new Date();
+        const elapsedSeconds = Math.floor((now - startTime) / 1000);
+        const days = Math.floor(elapsedSeconds / (24 * 3600));
+        const hours = Math.floor((elapsedSeconds % (24 * 3600)) / 3600);
+        const minutes = Math.floor((elapsedSeconds % 3600) / 60);
+        const seconds = elapsedSeconds % 60;
+        document.getElementById('timer').textContent =
+          (days < 10 ? '0' + days : days) + " days " +
+          (hours < 10 ? '0' + hours : hours) + ':' +
+          (minutes < 10 ? '0' + minutes : minutes) + ':' +
+          (seconds < 10 ? '0' + seconds : seconds);
+      }
+    
+      if (localStorage.getItem('startTime')) {
+        startTime = new Date(localStorage.getItem('startTime'));
+        timerInterval = setInterval(updateTimer, 1000);
+      } else {
+        document.getElementById('timer').textContent = 'ยังไม่ได้เริ่มทำแบบทดสอบ';
+      }
+    
+      document.querySelector('.Reset-timer').addEventListener('click', function () {
+        clearInterval(timerInterval);
+        localStorage.removeItem('startTime');
+        alert('รีเซ็ตเวลาแล้ว');
+        location.reload();
+      });
+    
+      const firebaseConfig = {
         apiKey: "AIzaSyDX18_aJbcVXz3xcrQtxAL1WNcm7BO2U1k",
         authDomain: "english-app-2ede3.firebaseapp.com",
         projectId: "english-app-2ede3",
@@ -309,340 +359,186 @@
         messagingSenderId: "46267452346",
         appId: "1:46267452346:web:81fb68d5836e0532c4ab83",
         measurementId: "G-Y9KXDJ6NFD"
-    };
-
-    // ✅ Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();  // ✅ Make sure this line is present!
-
-    // ✅ Function to get time-based motivational message
-    function getMotivationalMessage() {
+      };
+    
+      firebase.initializeApp(firebaseConfig);
+      const auth = firebase.auth();
+      const db = firebase.firestore();
+    
+      function getMotivationalMessage() {
         const hours = new Date().getHours();
-        if (hours < 12) {
-            return "🌞 Good morning! Ready to improve your pronunciation?";
-        } else if (hours < 18) {
-            return "🌅 Good afternoon! Keep up the great work!";
-        } else {
-            return "🌙 Good evening! Don't forget to practice before bed!";
-        }
-    }
-
-    // ✅ Function to update welcome message
-    function updateWelcomeMessage() {
-    console.log("✅ Running updateWelcomeMessage()...");
-
-    const motivationalMessage = getMotivationalMessage();
-    console.log("Motivational Message:", motivationalMessage);
-
-    auth.onAuthStateChanged(user => {
-        if (user) {
+        if (hours < 12) return "🌞 Good morning! Ready to improve your pronunciation?";
+        if (hours < 18) return "🌅 Good afternoon! Keep up the great work!";
+        return "🌙 Good evening! Don't forget to practice before bed!";
+      }
+    
+      function updateWelcomeMessage() {
+        console.log("✅ Running updateWelcomeMessage()...");
+        const motivationalMessage = getMotivationalMessage();
+        console.log("Motivational Message:", motivationalMessage);
+        auth.onAuthStateChanged(user => {
+          if (user) {
             console.log("✅ User detected:", user);
             document.getElementById("welcome-message").innerText = `${motivationalMessage} ${user.displayName || "User"}!`;
-        } else {
+          } else {
             console.warn("🚫 No user logged in.");
-        }
-    });
-}
-
-// ✅ Run the function on page load
-document.addEventListener("DOMContentLoaded", updateWelcomeMessage);
-
-
-    // ✅ Load Points & Level from Firebase
-    document.addEventListener("DOMContentLoaded", function () {
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                let userRef = db.collection("users").doc(user.uid);
-                userRef.get().then((doc) => {
-                    if (doc.exists) {
-                        let userData = doc.data();
-                        document.getElementById("user-points").textContent = userData.points || 0;
-                        document.getElementById("user-level").textContent = userData.level || "Basic/Beginner";
-                    }
-                });
-            }
+          }
         });
-    });
-
-    function updateUserDashboard() {
-    auth.onAuthStateChanged(async (user) => {
-        if (!user) {
-            console.warn("🚫 No user is logged in.");
-            return;
-        }
-
-        console.log("✅ Logged-in User ID:", user.uid);
-
-        try {
-            const userRef = db.collection("users").doc(user.uid);
-            const doc = await userRef.get();
-
-            if (!doc.exists) {
-                console.error("❌ No user document found in Firestore.");
-                return;
-            }
-
-            let data = doc.data();
-            console.log("✅ Firestore User Data:", data);
-
-            // ✅ Update Dashboard UI
-            let welcomeElement = document.getElementById("welcome-message");
-            if (welcomeElement) {
-                welcomeElement.innerText = `Welcome, ${data.fullName || "User"}!`;
-            } else {
-                console.warn("⚠️ Warning: #welcome-message element not found.");
-            }
-
+      }
+    
+      document.addEventListener("DOMContentLoaded", updateWelcomeMessage);
+    
+      function updateUserDashboard() {
+        auth.onAuthStateChanged(async (user) => {
+          if (!user) return;
+          try {
+            const doc = await db.collection("users").doc(user.uid).get();
+            if (!doc.exists) return;
+    
+            const data = doc.data();
             document.getElementById("user-score").textContent = data.score || "0.00";
-            if (data.isCompleted) {
-                document.getElementById("user-level").textContent = "🎓 All Levels Completed";
-            } else {
-              const levelDisplay = document.getElementById("user-level");
-              if (levelDisplay) {
-                  if (data.isCompleted === true) {
-                      levelDisplay.textContent = "🎓 All Levels Completed";
-                  } else if (typeof data.currentLevel === "number") {
-                      const levels = ["Basic/Beginner", "Intermediate Low", "Intermediate High", "Advanced", "Native/Fluent"];
-                      levelDisplay.textContent = levels[data.currentLevel] || data.level || "Unknown";
-                  } else {
-                      levelDisplay.textContent = data.currentLevel || "Unknown";
-                  }
+            document.getElementById("user-accuracy").textContent = data.overallAccuracy ? `${data.overallAccuracy}%` : "0.00%";
+    
+            const levelDisplay = document.getElementById("user-level");
+            if (levelDisplay) {
+              if (data.isCompleted) {
+                levelDisplay.textContent = "🎓 All Levels Completed";
+              } else if (typeof data.currentLevel === "number") {
+                const levels = ["Basic/Beginner", "Intermediate Low", "Intermediate High", "Advanced", "Native/Fluent"];
+                levelDisplay.textContent = levels[data.currentLevel] || "Unknown";
+              } else {
+                levelDisplay.textContent = data.level || "Unknown";
               }
             }
-            document.getElementById("user-accuracy").textContent = data.overallAccuracy ? `${data.overallAccuracy}%` : "0.00%";
-
-        } catch (error) {
+          } catch (error) {
             console.error("❌ Error fetching user data:", error);
-        }
-    });
-}
-
-    auth.onAuthStateChanged(user => {
-    if (user) {
-        const userRef = db.collection("users").doc(user.uid);
-
-        userRef.get().then((doc) => {
-            let data = doc.exists ? doc.data() : {};
+          }
+        });
+      }
+    
+      auth.onAuthStateChanged(user => {
+        if (user) {
+          const userRef = db.collection("users").doc(user.uid);
+          userRef.get().then((doc) => {
+            const data = doc.exists ? doc.data() : {};
             let lastLogin = data.lastLogin ? new Date(data.lastLogin) : null;
             let streak = data.streak || 0;
-            let today = new Date();
-            today.setHours(0, 0, 0, 0); // Normalize time
-
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
             if (lastLogin) {
-                let difference = (today - lastLogin) / (1000 * 60 * 60 * 24); // Difference in days
-
-                if (difference === 1) {
-                    streak++; // Continue streak
-                } else if (difference > 1) {
-                    streak = 1; // Reset streak if missed a day
-                }
+              const diff = (today - lastLogin) / (1000 * 60 * 60 * 24);
+              if (diff === 1) streak++;
+              else if (diff > 1) streak = 1;
             } else {
-                streak = 1; // First login
+              streak = 1;
             }
-
-            // ✅ Update the streak and last login date in Firestore
-            userRef.set({
-                lastLogin: today.toISOString(),
-                streak: streak
-            }, { merge: true })
-            .then(() => console.log(`✅ Streak updated: ${streak} days`))
-            .catch(error => console.error("❌ Error updating streak:", error));
-        });
-    } else {
-        console.error("❌ No user logged in.");
-    }
-});
-
-
-function loadUserStats(userId) {
-    if (!userId) {
-        console.error("❌ Error: User ID is undefined.");
-        return;
-    }
-
-    const userRef = db.collection("users").doc(userId);
-
-    userRef.get()
-        .then((doc) => {
-            if (doc.exists) {
-                let data = doc.data();
-                console.log("✅ User Data:", JSON.stringify(data));
-
-                let streakElement = document.getElementById("user-streak");
-                let scoreElement = document.getElementById("user-score");
-                let levelElement = document.getElementById("user-level");
-
-                if (streakElement) {
-                    streakElement.textContent = data.streak || "0"; // Default to 0
-                } else {
-                    console.warn("⚠️ Warning: #user-streak element not found.");
-                }
-
-                if (scoreElement) {
-                    scoreElement.textContent = data.score || "0.00";
-                } else {
-                    console.warn("⚠️ Warning: #user-score element not found.");
-                }
-                if (levelElement) {
-                  levelElement.textContent = data.isCompleted ? "🎓 All Levels Completed" : (data.level || "Unknown");
-                } 
-                else {
-                    console.warn("⚠️ Warning: #user-level element not found.");
-                }
-            } else {
-                console.log("❌ No user data found.");
-            }
-        })
-        .catch(error => console.error("❌ Error fetching user data:", error));
-}
-
-// ✅ Load user data on dashboard
-document.addEventListener("DOMContentLoaded", loadUserStats);
-
-document.addEventListener("DOMContentLoaded", function () {
-    if (typeof getTestScore !== "function") {
-        console.error("❌ Error: getTestScore is not defined. Ensure the script is loaded.");
-        return;
-    }
-
-    auth.onAuthStateChanged(user => {
-        if (user) {
+    
+            userRef.set({ lastLogin: today.toISOString(), streak }, { merge: true })
+              .then(() => console.log(`✅ Streak updated: ${streak} days`))
+              .catch(err => console.error("❌ Error updating streak:", err));
+          });
+        }
+      });
+    
+      document.addEventListener("DOMContentLoaded", function () {
+        auth.onAuthStateChanged(user => {
+          if (user) {
             const userId = user.uid;
-            console.log("✅ Logged-in User ID:", userId);
-
             if (document.getElementById("user-score") && document.getElementById("user-level") && document.getElementById("user-accuracy")) {
-                getTestScore(userId);
-            } else {
-                console.warn("⚠️ Warning: One or more dashboard elements are missing.");
+              getTestScore(userId);
             }
-        } else {
-            console.error("❌ No user logged in.");
-        }
-    });
-});
-
-function getTestScore(userId) {
-    if (!userId) {
-        console.error("❌ Error: User ID is undefined.");
-        return;
+          }
+        });
+      });
+    
+      function getTestScore(userId) {
+        const userRef = db.collection("users").doc(userId);
+        userRef.get().then((doc) => {
+          if (!doc.exists) return;
+          const data = doc.data();
+          document.getElementById("user-score").textContent = data.score || "0.00";
+          document.getElementById("user-accuracy").textContent = data.overallAccuracy ? `${data.overallAccuracy}%` : "0.00%";
+          const levelElement = document.getElementById("user-level");
+          if (levelElement) {
+            if (data.isCompleted) {
+              levelElement.textContent = "🎓 All Levels Completed";
+            } else if (typeof data.currentLevel === "number") {
+              const levels = ["Basic/Beginner", "Intermediate Low", "Intermediate High", "Advanced", "Native/Fluent"];
+              levelElement.textContent = levels[data.currentLevel] || "Unknown";
+            } else {
+              levelElement.textContent = data.level || "Unknown";
+            }
+          }
+        });
+      }
+    
+      document.addEventListener("DOMContentLoaded", () => {
+  auth.onAuthStateChanged(user => {
+    if (!user) {
+      console.warn("🚫 No user logged in.");
+      return;
     }
 
-    const userRef = db.collection("users").doc(userId);
-    userRef.get()
-        .then((doc) => {
-            if (doc.exists) {
-                let data = doc.data();
-                console.log(`✅ User Data:`, data);
-
-                let scoreElement = document.getElementById("user-score");
-                let levelElement = document.getElementById("user-level");
-                let accuracyElement = document.getElementById("user-accuracy");
-
-                if (scoreElement) {
-                    scoreElement.textContent = data.score || "0.00";
-                } else {
-                    console.warn("⚠️ Warning: #user-score element not found.");
-                }
-
-                if (levelElement) {
-                    if (data.isCompleted === true) {
-                        levelElement.textContent = "🎓 All Levels Completed";
-                    } else if (typeof data.currentLevel === "number") {
-                        const levels = [
-                            "Basic/Beginner",
-                            "Intermediate Low",
-                            "Intermediate High",
-                            "Advanced",
-                            "Native/Fluent"
-                        ];
-                        levelElement.textContent = levels[data.currentLevel] || "Unknown";
-                    } else {
-                        levelElement.textContent = "Unknown";
-                    }
-                } else {
-                    console.warn("⚠️ Warning: #user-level element not found.");
-                }
-
-                if (accuracyElement) {
-                    accuracyElement.textContent = data.overallAccuracy ? `${data.overallAccuracy}%` : "0.00%";
-                } else {
-                    console.warn("⚠️ Warning: #user-accuracy element not found.");
-                }
-            } else {
-                console.log("❌ No test score found.");
-            }
-        })
-        .catch(error => console.error("❌ Error fetching score:", error));
-}
-
-// ✅ Ensure Admin Sidebar Link is Visible for Admin Users
-function showAdminLink() {
-    auth.onAuthStateChanged(async (user) => {
-        if (!user) {
-            console.warn("🚫 No user is logged in.");
-            return;
-        }
-
-        console.log("✅ Logged-in User ID:", user.uid);
-
-        try {
-            const userRef = db.collection("users").doc(user.uid);
-            const doc = await userRef.get();
-
-            if (!doc.exists) {
-                console.error("❌ No user document found in Firestore.");
-                return;
-            }
-
-            const userData = doc.data();
-            console.log("✅ User Data from Firestore:", userData);
-
-            if (userData.isAdmin === true) {
-                const adminLink = document.getElementById("admin-link");
-
-                if (adminLink) {
-                    adminLink.style.display = "block";
-                    console.log("✅ Admin link is now visible.");
-                } else {
-                    console.warn("⚠️ Warning: #admin-link element not found in HTML.");
-                }
-            } else {
-                console.warn("🚫 User is not an admin.");
-            }
-        } catch (error) {
-            console.error("❌ Error checking admin status:", error);
-        }
-    });
-}
-
-auth.onAuthStateChanged(user => {
-  if (user) {
     const userRef = db.collection("users").doc(user.uid);
     userRef.get().then(doc => {
-      if (doc.exists) {
-        const data = doc.data();
-        const lastTestDate = data.lastTestDate;
-        if (lastTestDate) {
-          const date = new Date(lastTestDate);
-          const formatted = date.toLocaleDateString("en-US", {
-            weekday: "short",
-            year: "numeric",
-            month: "short",
-            day: "numeric"
-          });
-          document.getElementById("recent-activity").textContent = `Last test: ${formatted}`;
-        } else {
-          document.getElementById("recent-activity").textContent = `No recent test`;
-        }
+      if (!doc.exists) {
+        console.warn("❌ No user document found.");
+        return;
+      }
+
+      const data = doc.data();
+      const recentActivity = document.getElementById("recent-activity");
+
+      if (!recentActivity) {
+        console.warn("⚠️ #recent-activity not found in DOM.");
+        return;
+      }
+
+      const lastTestDate = data.lastTestDate;
+      const lastTestLevel = data.lastTestLevel;
+
+      if (lastTestDate && lastTestLevel) {
+        const date = new Date(lastTestDate);
+        const formattedDate = date.toLocaleDateString("en-US", {
+          weekday: "short",
+          year: "numeric",
+          month: "short",
+          day: "numeric"
+        });
+        recentActivity.textContent = `Last test: ${lastTestLevel} on ${formattedDate}`;
+      } else if (lastTestLevel) {
+        recentActivity.textContent = `Last test: ${lastTestLevel}`;
+      } else if (lastTestDate) {
+        const date = new Date(lastTestDate);
+        const formatted = date.toLocaleDateString("en-US", {
+          weekday: "short",
+          year: "numeric",
+          month: "short",
+          day: "numeric"
+        });
+        recentActivity.textContent = `Last test date: ${formatted}`;
+      } else {
+        recentActivity.textContent = "No recent test";
       }
     });
-  }
+  });
 });
-
-
-
-// ✅ Run function on page load
-document.addEventListener("DOMContentLoaded", showAdminLink);
-
-</script>
+    
+      function showAdminLink() {
+        auth.onAuthStateChanged(async (user) => {
+          if (!user) return;
+          const doc = await db.collection("users").doc(user.uid).get();
+          if (!doc.exists) return;
+    
+          const data = doc.data();
+          if (data.isAdmin === true) {
+            const adminLink = document.getElementById("admin-link");
+            if (adminLink) adminLink.style.display = "block";
+          }
+        });
+      }
+    
+      document.addEventListener("DOMContentLoaded", showAdminLink);
+      document.addEventListener("DOMContentLoaded", loadRecentActivity);
+    </script>
+    
