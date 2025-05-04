@@ -261,8 +261,6 @@ function analyzeSpeech(targetSentence, userSpeech) {
         const accentSimilarity = result.accent_similarity || 0;
         const combinedScore = (accuracy + accentSimilarity) / 2;
 
-
-        // ✅ Set native audio for playback
         if (result.audio_url) {
             document.getElementById("nativeAudio").src = result.audio_url;
         }
@@ -320,9 +318,7 @@ function analyzeSpeech(targetSentence, userSpeech) {
 
         const levelScore = (levelCorrectCount / totalSentences) * 5;
 
-        if (levelSentenceCount === totalSentences) {
-            evaluateLevelProgress(userId);
-        } else if (levelSentenceCount >= 5 && levelScore >= 3.5) {
+        if (levelSentenceCount === totalSentences || (levelSentenceCount >= 5 && levelScore >= 3.5)) {
             evaluateLevelProgress(userId);
         }
 
@@ -454,7 +450,7 @@ function nextLevel() {
         console.warn("🚫 nextLevel() already triggered. Ignoring.");
         return;
     }
-    isNextLevelLocked = true; // ✅ Lock it now
+    isNextLevelLocked = true;
     console.log("👉 nextLevel() called");
 
     const nextBtn = document.getElementById("next-level-btn");
@@ -477,32 +473,35 @@ function nextLevel() {
     levelSentenceCount = 0;
     usedSentences = {};
 
-     // ✅ Hide the score UI here:
+    // ✅ Hide the score UI
     const scoreBox = document.getElementById("level-score-ui");
     if (scoreBox) scoreBox.style.display = "none";
 
-    const userRef = db.collection("users").doc(auth.currentUser.uid);
-    userRef.set({ currentLevel: currentLevelIndex }, { merge: true });
+    const user = auth.currentUser;
+    if (user) {
+        const userRef = db.collection("users").doc(user.uid);
+        userRef.set({ currentLevel: currentLevelIndex }, { merge: true });
 
-    const previousKey = ["basic", "intermediateLow", "intermediateHigh", "advanced", "native"][currentLevelIndex - 1];
-    db.collection("users").doc(auth.currentUser.uid).update({
-        [`levelQuestions.${previousKey}`]: firebase.firestore.FieldValue.delete()
-    });
+        const previousKey = ["basic", "intermediateLow", "intermediateHigh", "advanced", "native"][currentLevelIndex - 1];
+        db.collection("users").doc(user.uid).update({
+            [`levelQuestions.${previousKey}`]: firebase.firestore.FieldValue.delete()
+        });
+    } else {
+        console.log("👤 Guest user: skipping Firestore update");
+    }
 
+    // ✅ Reset UI
     document.getElementById("normalized-score").textContent = '0.00';
     document.getElementById("raw-score-detail").textContent = '(Correct: 0 / 0)';
     document.getElementById("accent-similarity").innerHTML = "";
-    document.getElementById("level-score-ui").style.display = "block";
 
     generateSentence();
 
-    // ✅ Unlock after 500ms (just to be safe from double-clicks)
+    // ✅ Unlock after short delay to prevent double click
     setTimeout(() => {
         isNextLevelLocked = false;
     }, 500);
 }
-
-
 
 function showFinalScore(scoreOutOf25) {
     const box = document.getElementById("final-score-summary");
