@@ -218,19 +218,15 @@
             </div>
             <div class="dashboard-cards">
               <div class="dashboard-card">
-                <h3>📚 Lessons Completed</h3>
-                <li>Lesson 1 <span id="lesson1-status">⏳</span></li>
-                <li>Lesson 2 <span id="lesson2-status">⏳</span></li>
-                <li>Lesson 3 <span id="lesson3-status">⏳</span></li>
-                <li>Lesson 4 <span id="lesson4-status">⏳</span></li>
-                <li>Lesson 5 <span id="lesson5-status">⏳</span></li>
+                <h3>🧠 Recent Activity</h3>
+                <p id="recent-activity" style="margin-top: 10px; font-size: 0.9rem;">Last test: –</p>
               </div>
               <div class="dashboard-card">
                 <h3>📊 Your Overall Accuracy: <span id="user-accuracy">0.00%</span></h3>
               </div>
               <div class="dashboard-card">
                 <h3>🔥 Current Streak</h3>
-                <span id="timer">00 วัน 00:00:00</span>
+                <span id="timer">00 days 00:00:00</span>
               </div>
               <div class="dashboard-card">
                 <h3>🏆 Your Score: <span id="user-score">0</span></h3>
@@ -283,7 +279,7 @@
       const minutes = Math.floor((elapsedSeconds % 3600) / 60);
       const seconds = elapsedSeconds % 60;
       document.getElementById('timer').textContent =
-        (days < 10 ? '0' + days : days) + " วัน " +
+        (days < 10 ? '0' + days : days) + " days " +
         (hours < 10 ? '0' + hours : hours) + ':' +
         (minutes < 10 ? '0' + minutes : minutes) + ':' +
         (seconds < 10 ? '0' + seconds : seconds);
@@ -620,26 +616,31 @@ function showAdminLink() {
     });
 }
 
-firebase.auth().onAuthStateChanged(user => {
+auth.onAuthStateChanged(user => {
   if (user) {
-    firebase.firestore().collection("users").doc(user.uid).get().then(doc => {
-      const data = doc.data();
-      for (let i = 1; i <= 5; i++) {
-        if (data.lessons && data.lessons[`lesson${i}`]) {
-          document.getElementById(`lesson${i}-status`).textContent = "✅ Completed";
+    const userRef = db.collection("users").doc(user.uid);
+    userRef.get().then(doc => {
+      if (doc.exists) {
+        const data = doc.data();
+        const lastTestDate = data.lastTestDate;
+        if (lastTestDate) {
+          const date = new Date(lastTestDate);
+          const formatted = date.toLocaleDateString("en-US", {
+            weekday: "short",
+            year: "numeric",
+            month: "short",
+            day: "numeric"
+          });
+          document.getElementById("recent-activity").textContent = `Last test: ${formatted}`;
         } else {
-          document.getElementById(`lesson${i}-status`).textContent = "⏳ Not Started";
+          document.getElementById("recent-activity").textContent = `No recent test`;
         }
       }
     });
-  } else {
-    for (let i = 1; i <= 5; i++) {
-      if (localStorage.getItem(`lesson${i}_complete`) === "true") {
-        document.getElementById(`lesson${i}-status`).textContent = "✅ Completed (Guest)";
-      }
-    }
   }
 });
+
+
 
 // ✅ Run function on page load
 document.addEventListener("DOMContentLoaded", showAdminLink);

@@ -23,6 +23,22 @@ const phonemeLabels = {
     "S": "S as in 'snake'",
     "Z": "Z as in 'zoo'"
 };
+function normalizeText(text) {
+    return text
+        .toLowerCase()
+        .replace(/\b0\b/g, 'zero')
+        .replace(/\b1\b/g, 'one')
+        .replace(/\b2\b/g, 'two')
+        .replace(/\b3\b/g, 'three')
+        .replace(/\b4\b/g, 'four')
+        .replace(/\b5\b/g, 'five')
+        .replace(/\b6\b/g, 'six')
+        .replace(/\b7\b/g, 'seven')
+        .replace(/\b8\b/g, 'eight')
+        .replace(/\b9\b/g, 'nine')
+        .replace(/[^\w\s]/g, '') // remove punctuation
+        .trim();
+}
 
 let sentences = { basic: [], intermediateLow: [], intermediateHigh: [], advanced: [], native: [] };
 let levels = ["Basic/Beginner", "Intermediate Low", "Intermediate High", "Advanced", "Native/Fluent"];
@@ -39,6 +55,13 @@ let finalLevelCompleted = false; // ✅ NEW FLAG
 let levelEvaluationTriggered;
 let isNextLevelLocked = false;  // ✅ ADD THIS LINE
 
+
+const user = firebase.auth().currentUser;
+if (user) {
+  firebase.firestore().collection("users").doc(user.uid).set({
+    lastTestDate: new Date().toISOString()
+  }, { merge: true });
+}
 
 async function loadSentences() {
     try {
@@ -277,7 +300,7 @@ function analyzeSpeech(targetSentence, userSpeech) {
         }
 
         usedSentences[levelKey].shift();
-        if (accuracy >= 85 && combinedScore >= 85) levelCorrectCount++;
+        if (accuracy >= 85 && combinedScore >= 80) levelCorrectCount++;
         levelSentenceCount++;
 
         let accentFeedback = '';
@@ -330,7 +353,7 @@ function analyzeSpeech(targetSentence, userSpeech) {
 }
 
 function highlightDifferences(target, user) {
-    const clean = (s) => s.toLowerCase().replace(/[^\w\s]/g, '').trim();
+    const clean = normalizeText;
     const targetWords = clean(target).split(/\s+/);
     const userWords = clean(user).split(/\s+/);
 
@@ -450,8 +473,7 @@ function nextLevel() {
         console.warn("🚫 nextLevel() already triggered. Ignoring.");
         return;
     }
-    isNextLevelLocked = true;
-    console.log("👉 nextLevel() called");
+    isNextLevelLocked = true;  // lock immediately
 
     const nextBtn = document.getElementById("next-level-btn");
     if (nextBtn) {
@@ -473,9 +495,11 @@ function nextLevel() {
     levelSentenceCount = 0;
     usedSentences = {};
 
-    // ✅ Hide the score UI
-    const scoreBox = document.getElementById("level-score-ui");
-    if (scoreBox) scoreBox.style.display = "none";
+    const normalizedScore = document.getElementById("normalized-score");
+    if (normalizedScore) normalizedScore.textContent = '0.00';
+
+    const rawScore = document.getElementById("raw-score-detail");
+    if (rawScore) rawScore.textContent = '(Correct: 0 / 0)';
 
     const user = auth.currentUser;
     if (user) {
@@ -490,14 +514,9 @@ function nextLevel() {
         console.log("👤 Guest user: skipping Firestore update");
     }
 
-    // ✅ Reset UI
-    document.getElementById("normalized-score").textContent = '0.00';
-    document.getElementById("raw-score-detail").textContent = '(Correct: 0 / 0)';
-    document.getElementById("accent-similarity").innerHTML = "";
-
     generateSentence();
 
-    // ✅ Unlock after short delay to prevent double click
+    // ✅ Re-enable after short delay
     setTimeout(() => {
         isNextLevelLocked = false;
     }, 500);
