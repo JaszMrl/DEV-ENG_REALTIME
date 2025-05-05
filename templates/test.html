@@ -129,39 +129,52 @@
 </style>
 
 <body>
+    <script src="{{ url_for('static', filename='lang.js') }}"></script>
         <div class="app-container">
-            <aside class="sidebar">
-              <nav>
-                <ul>
-                  <li><a href="{{ url_for('home') }}">
-                    <img src="/static/icons/dashboard.svg" width="20" style="margin-right: 10px;"> Dashboard</a>
-                  </li>
-                  <li><a href="{{ url_for('user') }}">
-                    <img src="/static/icons/user.svg" width="20" style="margin-right: 10px;"> User</a>
-                  </li>
-                  <li><a href="{{ url_for('settings') }}">
-                    <img src="/static/icons/settings.svg" width="20" style="margin-right: 10px;"> Settings</a>
-                  </li>
-                  <li>
-                    <a href="{{ url_for('speech_test') }}" style="display: flex; align-items: center;">
-                      <img src="/static/icons/mic.svg" width="24" height="24" style="margin-right: 12px;"> 
-                      <span>Speech Test</span>
-                    </a>
-                  </li>            
-                  <li>
-                    <a href="{{ url_for('learn') }}" class="{% if current_page == 'learn' %}active{% endif %}">
-                      <img src="/static/icons/book.svg" width="20" style="margin-right: 10px;"> Learn
-                    </a>
-                  </li>
-                  <li id="admin-link" style="display: none;">
-                    <a href="/admin">
-                      <img src="/static/icons/shield.svg" width="20" style="margin-right: 10px;"> Admin
-                    </a>
-                  </li>
-                </ul>
-              </nav>
-            </aside>
-
+<!-- Sidebar -->
+<aside class="sidebar">
+    <div class="app-container">
+          <nav>
+            <ul>
+              <li> <a href="{{ url_for('home') }}">
+                <img src="/static/icons/dashboard.svg" width="20" style="margin-right: 10px;">
+                <span data-i18n="dashboard">Dashboard</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('user') }}">
+                <img src="/static/icons/user.svg" width="20" style="margin-right: 10px;">
+                <span data-i18n="user">User</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('settings') }}">
+                <img src="/static/icons/settings.svg" width="20" style="margin-right: 10px;">
+                <span data-i18n="settings">Settings</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('speech_test') }}" style="display: flex; align-items: center;">
+                <img src="/static/icons/mic.svg" width="24" height="24" style="margin-right: 12px;">
+                <span data-i18n="speech_test">Speech Test</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('learn') }}" class="{% if current_page == 'learn' %}active{% endif %}">
+                <img src="/static/icons/book.svg" width="20" style="margin-right: 10px;">
+                <span data-i18n="learn">Learn</span>
+              </a>
+            </li>
+            <li id="admin-link" style="display: none;">
+              <a href="/admin">
+                <img src="/static/icons/shield.svg" width="20" style="margin-right: 10px;">
+                <span data-i18n="admin">Admin</span>
+              </a>
+              </li>
+            </ul>
+          </nav>
+        </aside>
+  
         <div class="main-content">
             <div class="test-container">
                 <h3>Current Level: <span id="current-level">Basic/Beginner</span></h3>

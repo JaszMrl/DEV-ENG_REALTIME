@@ -243,109 +243,122 @@ body.dark-mode {
     </style>
 </head>
 <body>
+    <script src="{{ url_for('static', filename='lang.js') }}"></script>
 <!-- Sidebar -->
 <aside class="sidebar">
     <div class="app-container">
           <nav>
             <ul>
-              <li><a href="{{ url_for('home') }}">
-                <img src="/static/icons/dashboard.svg" width="20" style="margin-right: 10px;"> Dashboard</a>
-              </li>
-              <li><a href="{{ url_for('user') }}">
-                <img src="/static/icons/user.svg" width="20" style="margin-right: 10px;"> User</a>
-              </li>
-              <li><a href="{{ url_for('settings') }}">
-                <img src="/static/icons/settings.svg" width="20" style="margin-right: 10px;"> Settings</a>
-              </li>
-              <li>
-                <a href="{{ url_for('speech_test') }}" style="display: flex; align-items: center;">
-                  <img src="/static/icons/mic.svg" width="24" height="24" style="margin-right: 12px;"> 
-                  <span>Speech Test</span>
-                </a>
-              </li>            
-              <li>
-                <a href="{{ url_for('learn') }}" class="{% if current_page == 'learn' %}active{% endif %}">
-                  <img src="/static/icons/book.svg" width="20" style="margin-right: 10px;"> Learn
-                </a>
-              </li>
-              <li id="admin-link" style="display: none;">
-                <a href="/admin">
-                  <img src="/static/icons/shield.svg" width="20" style="margin-right: 10px;"> Admin
-                </a>
+              <li> <a href="{{ url_for('home') }}">
+                <img src="/static/icons/dashboard.svg" width="20" style="margin-right: 10px;">
+                <span data-i18n="dashboard">Dashboard</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('user') }}">
+                <img src="/static/icons/user.svg" width="20" style="margin-right: 10px;">
+                <span data-i18n="user">User</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('settings') }}">
+                <img src="/static/icons/settings.svg" width="20" style="margin-right: 10px;">
+                <span data-i18n="settings">Settings</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('speech_test') }}" style="display: flex; align-items: center;">
+                <img src="/static/icons/mic.svg" width="24" height="24" style="margin-right: 12px;">
+                <span data-i18n="speech_test">Speech Test</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('learn') }}" class="{% if current_page == 'learn' %}active{% endif %}">
+                <img src="/static/icons/book.svg" width="20" style="margin-right: 10px;">
+                <span data-i18n="learn">Learn</span>
+              </a>
+            </li>
+            <li id="admin-link" style="display: none;">
+              <a href="/admin">
+                <img src="/static/icons/shield.svg" width="20" style="margin-right: 10px;">
+                <span data-i18n="admin">Admin</span>
+              </a>
               </li>
             </ul>
           </nav>
         </aside>
   
 
-    <div class="main-content">
-        <div class="content">
-            <h2>⚙️ Settings</h2>
-
-            <div class="theme-switch-container">
-                <span>🌗 Theme Mode</span>
-                <label class="theme-switch">
-                    <input type="checkbox" id="theme-toggle">
-                    <span class="slider"></span>
-                </label>
-            </div>            
-
-            <div class="form-group">
-                <label>🌍 Language Preferences</label>
-                <select id="language-preference">
-                    <option value="en">English</option>
-                    <option value="th">Thai</option>
-                    <option value="es">Spanish</option>
-                    <option value="fr">French</option>
-                    <option value="de">German</option>
-                    <option value="zh">Chinese</option>
-                </select>
-                <button class="small-btn" id="save-language">Save</button>
-            </div>
-
-            <div class="form-group">
-                <label>💡 Feedback & Suggestions</label>
-                <div class="feedback-container">
-                    <select>
-                        <option>Feature Request</option>
-                        <option>Bug Report</option>
-                        <option>General Feedback</option>
-                    </select>
-                    <textarea class="feedback-box" placeholder="Write your feedback..."></textarea>
+        <div class="main-content">
+            <div class="content">
+                <h2 data-i18n="settings_title">⚙️ Settings</h2>
+        
+                <div class="theme-switch-container">
+                    <span data-i18n="theme_mode">🌗 Theme Mode</span>
+                    <label class="theme-switch">
+                        <input type="checkbox" id="theme-toggle">
+                        <span class="slider"></span>
+                    </label>
                 </div>
-                           
-                <button class="small-btn" id="submit-feedback">Send</button>
+        
+                <div class="form-group">
+                    <label data-i18n="language_pref">🌍 Language Preferences</label>
+                    <select id="language-preference">
+                        <option value="en">English</option>
+                        <option value="th">Thai</option>
+                    </select>
+                    <button class="small-btn" id="save-language" data-i18n="save_btn">Save</button>
+                </div>
+        
+                <div class="form-group">
+                    <label data-i18n="feedback_label">💡 Feedback & Suggestions</label>
+                    <div class="feedback-container">
+                        <select>
+                            <option>Feature Request</option>
+                            <option>Bug Report</option>
+                            <option>General Feedback</option>
+                        </select>
+                        <textarea class="feedback-box" placeholder="Write your feedback..."></textarea>
+                    </div>
+                    <button class="small-btn" id="submit-feedback" data-i18n="send_btn">Send</button>
+                </div>
             </div>
         </div>
-    </div>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            // GSAP Animations
-            gsap.to(".main-content", { opacity: 1, duration: 1, y: -10, delay: 0.3 });
-            gsap.to(".content", { opacity: 1, duration: 1, y: -10, delay: 0.5 });
-    
-            // Select the dark mode toggle switch
-            const themeToggle = document.getElementById("theme-toggle");
-    
-            // Function to toggle dark mode
-            function toggleDarkMode() {
-                document.body.classList.toggle("dark-mode");
-    
-                // Save preference to localStorage
-                localStorage.setItem("dark-mode", document.body.classList.contains("dark-mode") ? "enabled" : "disabled");
-            }
-    
-            // Check localStorage for dark mode setting
-            if (localStorage.getItem("dark-mode") === "enabled") {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+              gsap.to(".main-content", { opacity: 1, duration: 1, y: -10, delay: 0.3 });
+              gsap.to(".content", { opacity: 1, duration: 1, y: -10, delay: 0.5 });
+        
+              const themeToggle = document.getElementById("theme-toggle");
+              const languageSelect = document.getElementById("language-preference");
+              const saveLangBtn = document.getElementById("save-language");
+        
+              if (localStorage.getItem("dark-mode") === "enabled") {
                 document.body.classList.add("dark-mode");
-                themeToggle.checked = true; // Ensure toggle is on
-            }
-    
-            // Add event listener for theme switch
-            themeToggle.addEventListener("change", toggleDarkMode);
-        });
-    </script>
-    
-</body>
-</html>
+                themeToggle.checked = true;
+              }
+        
+              themeToggle.addEventListener("change", () => {
+                document.body.classList.toggle("dark-mode");
+                localStorage.setItem("dark-mode", document.body.classList.contains("dark-mode") ? "enabled" : "disabled");
+              });
+        
+              const savedLang = localStorage.getItem("app-language");
+              if (savedLang && typeof applyTranslations === "function") {
+                languageSelect.value = savedLang;
+                applyTranslations(savedLang);
+              }
+        
+              saveLangBtn.addEventListener("click", () => {
+                const selectedLang = languageSelect.value;
+                localStorage.setItem("app-language", selectedLang);
+                if (typeof applyTranslations === "function") {
+                  applyTranslations(selectedLang);
+                }
+                alert("✅ Language preference saved: " + (selectedLang === "th" ? "ภาษาไทย" : "English"));
+              });
+            });
+          </script>
+            </body>
+            </html>
+            
