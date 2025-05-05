@@ -133,10 +133,76 @@
       border-radius: 6px;
       cursor: pointer;
     }
+/* 🌙 Dark Mode for Learn Page Cards */
+/* 🌙 Dark Mode Nav Fix */
+/* 🌙 Dark Mode Nav Fix */
+.dark-mode nav a {
+  color: #ccc;
+  background-color: transparent;
+  transition: background 0.3s, color 0.3s;
+}
+
+.dark-mode nav a.active {
+  color: white;
+  background-color: #3B82F6;
+}
+
+.dark-mode nav a:hover {
+  color: white;
+  background-color: #444;
+}
+
+/* 🌙 Dark Mode for Learn Page Cards */
+.dark-mode .lesson-card {
+  background-color: #2d2d2d;
+  color: #ffffff;
+  border: 1px solid #444; /* optional, improves contrast */
+}
+
+.dark-mode .lesson-card h3,
+.dark-mode .lesson-card p {
+  color: #ffffff;
+}
+
+.dark-mode .lesson-card input {
+  background-color: #444;
+  color: white;
+  border: 1px solid #888;
+}
+
+.dark-mode .lesson-card button {
+  background-color: #3B82F6;
+  color: white;
+  border: none;
+}
+.dark-mode .lesson-card button {
+  background-color: #3B82F6 !important; /* blue background */
+  color: white !important;               /* visible text */
+  border: none;
+}
+.dark-mode button {
+  background-color: #3B82F6;
+  color: white;
+  border: none;
+}
+/* 🌙 Fix for .tab buttons at top */
+.dark-mode .tab {
+  background-color: #444;
+  color: #fff;
+  border: 1px solid #666;
+}
+
+.dark-mode .tab.active {
+  background-color: #3B82F6;
+  color: #fff;
+}
+
+
   </style>
 </head>
 <body>
   <script src="{{ url_for('static', filename='lang.js') }}"></script>
+  <script src="{{ url_for('static', filename='global.js') }}"></script>
     <!-- Sidebar -->
 <aside class="sidebar">
   <div class="app-container">

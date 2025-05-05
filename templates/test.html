@@ -126,10 +126,42 @@
         from { opacity: 0; transform: translateY(20px); }
         to { opacity: 1; transform: translateY(0); }
     }
-</style>
+/* 🌙 Dark Mode Fix for Speech Test */
 
+/* Container box */
+.dark-mode .test-container {
+  background-color: #2d2d2d;
+  color: #ffffff;
+  border: 1px solid #444;
+}
+
+/* Result Box (summary) */
+.dark-mode .result-box {
+  background-color: #1f1f1f;
+  border-left: 5px solid #3B82F6;
+  color: #ffffff;
+}
+
+/* Buttons */
+.dark-mode button {
+  background-color: #3B82F6;
+  color: white;
+  border: none;
+}
+
+/* Headings and paragraph */
+.dark-mode h2,
+.dark-mode h3,
+.dark-mode p,
+.dark-mode span {
+  color: #ffffff;
+}
+
+  </style>
+</head>
 <body>
-    <script src="{{ url_for('static', filename='lang.js') }}"></script>
+  <script src="{{ url_for('static', filename='lang.js') }}"></script>
+  <script src="{{ url_for('static', filename='global.js') }}"></script>
         <div class="app-container">
 <!-- Sidebar -->
 <aside class="sidebar">

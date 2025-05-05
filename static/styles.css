@@ -11,6 +11,14 @@ html, body {
   font-family: 'Poppins', sans-serif;
   height: 100%;
 }
+body.dark-mode {
+  background-color: #1e1e1e;
+  color: #f1f1f1;
+}
+.dark-mode .content {
+  background-color: #2a2a2a;
+}
+
 
 /* ======= LAYOUT ======= */
 .app-container {

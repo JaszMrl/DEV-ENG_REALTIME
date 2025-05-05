@@ -126,11 +126,31 @@
       .lesson-container {
         max-width: 100%;
       }
+                    /* ✅ Add this inside the <style> tag of index.html */
+                      body.dark-mode {
+          background-color: #1e1e1e;
+          color: #f1f1f1;
+        }
+
+        .dark-mode .sidebar {
+          background-color: #2a2a2a;
+        }
+
+        .dark-mode .dashboard-card {
+          background-color: #2d2d2d;
+          color: #ffffff;
+        }
+
+        .dark-mode .dashboard-card h3,
+        .dark-mode .dashboard-card p {
+          color: #ffffff;
+        }
     }
   </style>
 </head>
 <body>
   <script src="{{ url_for('static', filename='lang.js') }}"></script>
+  <script src="{{ url_for('static', filename='global.js') }}"></script>
   <div class="app-container">
 <!-- Sidebar -->
 <aside class="sidebar">

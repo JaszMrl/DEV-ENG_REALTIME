@@ -208,10 +208,54 @@
     #update-info-container {
         animation: fadeIn 0.3s ease-in-out;
     }
+    /* 🌙 Dark Mode for User Page */
+
+/* Card and container backgrounds */
+.dark-mode .profile-card,
+.dark-mode .update-info {
+  background-color: #2d2d2d;
+  color: white;
+  border: 1px solid #444;
+}
+
+.dark-mode .user-info {
+  background-color: #1f1f1f;
+  color: white;
+  border: 1px solid #555;
+}
+
+/* Headings and paragraph */
+.dark-mode h2,
+.dark-mode h3,
+.dark-mode p,
+.dark-mode strong,
+.dark-mode span {
+  color: white;
+}
+
+/* Input and select */
+.dark-mode input,
+.dark-mode select {
+  background-color: #333;
+  color: white;
+  border: 1px solid #777;
+}
+
+/* Buttons */
+.dark-mode button {
+  background-color: #3B82F6;
+  color: white;
+  border: none;
+}
+
+.dark-mode button:hover {
+  background-color: #1E40AF;
+}
 
     </style>
 <body>
     <script src="{{ url_for('static', filename='lang.js') }}"></script>
+    <script src="{{ url_for('static', filename='global.js') }}"></script>
        <!-- Sidebar -->
 <aside class="sidebar">
     <div class="app-container">
