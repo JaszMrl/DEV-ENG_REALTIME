@@ -43,7 +43,11 @@ import ffmpeg
 
 def preprocess_audio(input_file, output_file, target_sr=16000):
     try:
-        ffmpeg.input(input_file).output(output_file, ar=target_sr).run(overwrite_output=True)
+        # If input is webm, we specify opus audio codec conversion
+        if input_file.endswith('.webm'):
+            ffmpeg.input(input_file).output(output_file, ar=target_sr, acodec='pcm_s16le').run(overwrite_output=True)
+        else:
+            ffmpeg.input(input_file).output(output_file, ar=target_sr).run(overwrite_output=True)
     except Exception as e:
         raise RuntimeError(f"FFmpeg conversion failed: {e}")
     y, sr = librosa.load(output_file, sr=target_sr, mono=True)

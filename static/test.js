@@ -23,6 +23,7 @@ const phonemeLabels = {
     "S": "S as in 'snake'",
     "Z": "Z as in 'zoo'"
 };
+
 function normalizeText(text) {
     return text
         .toLowerCase()
@@ -88,6 +89,7 @@ let levelScoreHistory = [];
 let finalLevelCompleted = false; // ✅ NEW FLAG
 let levelEvaluationTriggered;
 let isNextLevelLocked = false;  // ✅ ADD THIS LINE
+
 
 
 const user = firebase.auth().currentUser;
@@ -172,15 +174,13 @@ function generateSentence() {
 let mediaRecorder;
 let recordedChunks = [];
 
+// Start audio recording
 async function startAudioRecording() {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    
-    // ✅ Set correct MIME type for better compatibility
+
     mediaRecorder = new MediaRecorder(stream, {
         mimeType: "audio/webm;codecs=opus"
     });
-
-    recordedChunks = [];
 
     mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
@@ -192,12 +192,10 @@ async function startAudioRecording() {
         const blob = new Blob(recordedChunks, { type: "audio/webm" });
         const formData = new FormData();
         formData.append("audio", blob, "user_audio.webm");
-
-        // Replace this if your sentence is dynamic
         const sentence = document.getElementById("test-sentence").innerText.trim();
         formData.append("target_sentence", sentence);
 
-
+        // Send the FormData to the backend for analysis
         fetch("/analyze_audio", {
             method: "POST",
             body: formData
@@ -206,7 +204,7 @@ async function startAudioRecording() {
         .then(data => {
             console.log("🎯 Backend Response:", data);
             if (data.error) {
-                showResult(`❌ ${data.error}`, 0, 0);
+                showResult(`❌ ${data.error}`, 0, 0, 0);
             } else {
                 showResult(
                     `✅ You said: ${data.transcription}<br>
@@ -217,164 +215,112 @@ async function startAudioRecording() {
                     data.accent_score,
                     data.combined_similarity,
                     data.bonus_score
-                );                            
+                );
             }
+        })
+        .catch(error => {
+            console.error("❌ Error:", error);
+            showResult("❌ Error with the backend request.", 0, 0);
         });
-    }        
+    };
 
     mediaRecorder.start();
     console.log("🎙 Recording started");
     document.getElementById("start-speech-btn").disabled = true;
-document.getElementById("stop-recording-btn").disabled = false;
-
+    document.getElementById("stop-recording-btn").disabled = false;
 }
 
+// Stop audio recording
 function stopAudioRecording() {
     if (mediaRecorder && mediaRecorder.state !== "inactive") {
         mediaRecorder.stop();
         console.log("🛑 Recording stopped");
     }
     document.getElementById("stop-recording-btn").disabled = true;
-document.getElementById("start-speech-btn").disabled = false;
-
+    document.getElementById("start-speech-btn").disabled = false;
 }
 
-function showResult(message, score) {
-    const resultBox = document.getElementById("test-result");
-    resultBox.innerHTML = `${message}<br><strong>Score:</strong> ${score}/5`;
-}
-
-function playNativeCustom() {
-    const audio = document.getElementById("nativeAudio");
-    if (!audio.src) {
-        alert("❌ No native audio available.");
-        return;
-    }
-    audio.play().catch(() => {
-        alert("❌ Audio cannot be played.");
-    });
-}
-
-    document.addEventListener("DOMContentLoaded", function () {
-    document.getElementById("next-level-btn")?.addEventListener("click", nextLevel);
-});
-
-function showResult(message, score, combinedSimilarity = 0, bonus = 0) {
+// Show result
+function showResult(message, accentScore, combinedSimilarity, bonusScore) {
     const resultBox = document.getElementById("test-result");
     resultBox.innerHTML = `
         ${message}<br>
-        <strong>Accent Score:</strong> ${score}/5<br>
+        <strong>Accent Score:</strong> ${accentScore}/5<br>
         <strong>Combined Similarity:</strong> ${combinedSimilarity}%<br>
-        <strong>Bonus:</strong> ${bonus > 0 ? "+0.5 ✅" : "None ❌"}
-    `;
-
-    // ✅ Add to progress tracking
-    if (combinedSimilarity >= 80) levelCorrectCount += 0.5;
-    levelSentenceCount += 1;
+        <strong>Bonus:</strong> ${bonusScore > 0 ? "+0.5 ✅" : "None ❌"}`;
 }
 
+// Analyze audio
+function analyzeAudio(formData) {
+    fetch('/analyze_audio', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        const { transcription, accuracy, similarity, word_match, accent_similarity } = data;
 
-function highlightDifferences(target, user) {
-    const clean = normalizeText;
-    const targetWords = clean(target).split(/\s+/);
-    const userWords = clean(user).split(/\s+/);
+        const combinedScore = (accuracy + accent_similarity) / 2;
 
-    const length = Math.max(targetWords.length, userWords.length);
+        document.getElementById("test-result").innerHTML = `
+            <p><strong>Target Sentence:</strong> "${document.getElementById("test-sentence").textContent}"</p>
+            <p><strong>Your Speech:</strong> ${transcription}</p>
+            <p><strong>Word Match:</strong> ${word_match}%</p>
+            <p><strong>🧮 Combined Score:</strong> ${combinedScore}%</p>
+        `;
 
-    return Array.from({ length }).map((_, i) => {
-        const t = targetWords[i] || '';
-        const u = userWords[i] || '';
+        // Update score and level progress
+        if (accuracy >= 85 && combinedScore >= 50) levelCorrectCount++;
+        levelSentenceCount++;
 
-        if (t === u) {
-            return `<span style="color: green; font-weight: bold;">${u}</span>`;
-        } else {
-            return `<span style="color: red;">${u}</span>`;
+        // Update the score display
+        document.getElementById("raw-score-detail").textContent = `(Correct: ${levelCorrectCount} / 10)`;
+        document.getElementById("normalized-score").textContent = ((levelCorrectCount / 10) * 5).toFixed(2);
+
+        // Check if it's time to evaluate level progression
+        if (levelSentenceCount === 10 || (levelSentenceCount >= 5 && levelCorrectCount >= 7)) {
+            evaluateLevelProgress();
         }
-    }).join(' ');
+    })
+    .catch(error => {
+        console.error("❌ Error analyzing audio:", error);
+    });
 }
 
-function evaluateLevelProgress(userId) {
-    if (levelEvaluationTriggered) return; // ✅ already triggered
-    levelEvaluationTriggered = true; // ✅ lock it now
-    console.log("🧪 Checking level progression...");
-    console.log("📍 Current Level Index:", currentLevelIndex);
-
-    let totalSentences = 10;
-    let levelKey = ["basic", "intermediateLow", "intermediateHigh", "advanced", "native"][currentLevelIndex];
-
-    if (levelSentenceCount < 5) {
-        alert(`⚠️ You must answer at least 5 sentences to complete this level.`);
-    }
-
-    let levelScore = (levelCorrectCount / totalSentences) * 5;
+// Evaluate level progression
+function evaluateLevelProgress() {
+    // Ensure we calculate level score (out of 5)
+    let levelScore = (levelCorrectCount / 10) * 5;
     levelScore = parseFloat(levelScore.toFixed(2));
 
-    // ✅ Always show & record score
+    // Update normalized score on the UI
     const scoreDisplay = document.getElementById('normalized-score');
     const detailDisplay = document.getElementById('raw-score-detail');
     if (scoreDisplay) scoreDisplay.textContent = levelScore.toFixed(2);
-    if (detailDisplay) detailDisplay.textContent = `(Correct: ${levelCorrectCount} / ${totalSentences})`;
+    if (detailDisplay) detailDisplay.textContent = `(Correct: ${levelCorrectCount} / 10)`;
 
-    const userRef = db.collection("users").doc(userId);
-    const levelName = levels[currentLevelIndex];
-
+    // Save level score to Firestore for tracking
+    const userRef = db.collection("users").doc(auth.currentUser.uid);
     userRef.set({
-        [`levelScores.${levelName}`]: levelScore
+        [`levelScores.${levels[currentLevelIndex]}`]: levelScore
     }, { merge: true });
 
-    levelScoreHistory.push(levelScore);  // ✅ Always store this
+    // After saving, show level summary
+    showLevelSummary(levelScore);
 
-    if (currentLevelIndex === levels.length - 1) {
-        const total = levelScoreHistory.reduce((a, b) => a + b, 0);
-        const finalScore = parseFloat(total.toFixed(2));
-        finalLevelCompleted = true;
-    
-        document.getElementById("level-score-ui").style.display = "none";
-        document.getElementById("test-result-summary").style.display = "none";
-        showFinalScore(finalScore);
-    
-        const userRef = db.collection("users").doc(userId);
-        const levelName = levels[currentLevelIndex];
-        
-        userRef.set({
-            [`levelScores.${levelName}`]: levelScore,
-            lastTestDate: new Date().toISOString(),
-            lastTestLevel: levelName  // ✅ <-- add this line
-        }, { merge: true });            
-        
-        document.getElementById("next-level-btn").style.display = "none";
-        return;
-    }    
-        if (currentLevelIndex === levels.length - 1) {
-            // [Your existing final-level logic]
-            return;
+    // Handle logic for moving to next level
+    if (levelCorrectCount >= 7 && levelSentenceCount >= 5) {
+        currentLevelIndex++;  // Move to the next level
+        if (currentLevelIndex >= levels.length) {
+            showFinalScore(levelScore);
+        } else {
+            generateSentence();  // Generate next sentence for the next level
         }
-        
-        // ✅ Only allow saving last test if passed
-        if (levelScore >= 3.5) {
-            userRef.set({
-                lastTestDate: new Date().toISOString(),
-                lastTestLevel: levelName
-            }, { merge: true }).then(() => {
-                console.log("✅ Saved recent activity:", levelName);
-            });
-        
-            showLevelSummary(levelScore);
-        }
-}
-
-function hideLevelSummary() {
-    const box = document.getElementById("test-result-summary");
-    if (box) box.style.display = "none";
-}
-
-function showLevelSummary(score) {
-    // 🛑 BLOCK if all levels are complete
-    if (finalLevelCompleted) {
-        console.log("🚫 Skipping showLevelSummary because final level is done.");
-        return;
     }
+}
 
+// Show level summary
+function showLevelSummary(score) {
     const box = document.getElementById("test-result-summary");
     const title = document.getElementById("result-title");
     const comment = document.getElementById("result-comment");
@@ -395,13 +341,10 @@ function showLevelSummary(score) {
         comment.textContent = "Keep practicing — you’ll improve in no time!";
     }
 
-    if (score >= 3.5 && currentLevelIndex < levels.length - 1) {
-        nextBtn.style.display = "inline-block";
-    } else {
-        nextBtn.style.display = "none";
-    }
+    nextBtn.style.display = score >= 3.5 && currentLevelIndex < levels.length - 1 ? "inline-block" : "none";
 }
 
+// Move to the next level
 function nextLevel() {
     if (isNextLevelLocked) {
         console.warn("🚫 nextLevel() already triggered. Ignoring.");
@@ -459,28 +402,6 @@ function nextLevel() {
         isNextLevelLocked = false;
     }, 500);
 }
-
-
-function showFinalScore(scoreOutOf25) {
-    const box = document.getElementById("final-score-summary");
-    const text = document.getElementById("final-score-text");
-
-    const scoreUI = document.getElementById("level-score-ui");
-    const summaryBox = document.getElementById("test-result-summary");
-
-    if (scoreUI) scoreUI.style.display = "none";
-    if (summaryBox) summaryBox.style.display = "none";  // 🧼 Add this to hide summary
-
-    if (box && text) {
-        box.style.display = "block";
-        text.textContent = `Your Final Score: ${scoreOutOf25} / 25`;
-    }
-
-    document.getElementById("normalized-score").textContent = '';
-    document.getElementById("raw-score-detail").textContent = '';
-}
-
-
 function playNativeCustom() {
     const sentence = document.getElementById("test-sentence").textContent;
     if (!sentence || sentence.includes("Generate")) {
@@ -519,9 +440,9 @@ function resetUserLevel() {
         generateSentence();
       });
     }
-  }  
+  } 
 
-  document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", function () {
     loadSentences();
 
     auth.onAuthStateChanged(user => {
@@ -554,5 +475,3 @@ function resetUserLevel() {
         }
     });
 });
-
-
