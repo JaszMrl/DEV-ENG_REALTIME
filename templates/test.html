@@ -156,6 +156,13 @@
 .dark-mode span {
   color: #ffffff;
 }
+#stop-recording-btn {
+  background-color: #dc3545;
+}
+#stop-recording-btn:hover {
+  background-color: #b02a37;
+}
+
 
   </style>
 </head>
@@ -214,11 +221,18 @@
                 <button onclick="playNativeCustom()">🔊 Play Audio</button>
                 <audio id="nativeAudio" preload="auto"></audio>
                 <button id="generate-btn" onclick="generateSentence()">Generate Sentence</button>
-                <button class="Start-timer" id="start-speech-btn" onclick="startSpeechRecognition()" disabled>🎙️ Speak</button>
-                <button id="stop-speech-btn" onclick="stopSpeechRecognition()" disabled>🛑 Stop</button>
+                <button class="Start-timer" id="start-speech-btn" onclick="startAudioRecording()">🎙️ Start Recording</button>
+                <button id="stop-recording-btn" disabled>🛑 Stop Recording</button>
 
                 <h2>Speech Test Result</h2>
-                <p id="test-result">Your accuracy will be displayed here...</p>
+                <div id="test-result" class="result-box">
+                  <p><strong>🎤 Your Speech:</strong> <span id="spoken-sentence">...</span></p>
+                  <p><strong>🎯 Target Sentence:</strong> <span id="target-sentence-text">...</span></p>
+                  <p><strong>✅ Similarity:</strong> <span id="similarity-score">...</span>%</p>
+                  <p><strong>🗣️ Accent Similarity:</strong> <span id="accent-similarity-score">...</span>%</p>
+                  <p><strong>🏆 Combined Score:</strong> <span id="combined-score">...</span>%</p>
+              </div>
+              
                 
                 <!-- ✅ NEW SCORE DISPLAY SECTION -->
                 <div id="level-score-ui">

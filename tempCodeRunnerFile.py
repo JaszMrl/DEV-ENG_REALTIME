@@ -91,6 +91,44 @@ def generate_speech_if_not_exists(text, voices):
     return reference_mfccs
 
 # ----------------- Analyze Route -----------------
+@app.route('/analyze_audio', methods=['POST'])
+def analyze_audio():
+    try:
+        audio_file = request.files.get('audio')
+        sentence = request.form.get('target_sentence', '').strip()
+
+        if not audio_file or not sentence:
+            return jsonify({"error": "Missing audio or sentence"}), 400
+
+        # Save uploaded file
+        filename = f"user_audio_{uuid.uuid4().hex}.webm"
+        audio_path = os.path.join("temp", filename)
+        audio_file.save(audio_path)
+
+        # Convert to .wav (if needed), then preprocess
+        processed_path = preprocess_audio(audio_path, "processed.wav")
+        denoised_path = remove_noise(processed_path)
+        user_mfcc = extract_mfcc(denoised_path)
+
+        # Load reference MFCCs (TTS voice samples)
+        reference_mfccs = generate_speech_if_not_exists(sentence, REFERENCE_AUDIO_FILES["male"])
+        best_voice, similarity = compare_with_multiple_references(user_mfcc, reference_mfccs)
+        score = predict_score_from_similarity(similarity)
+
+        # Cleanup
+        os.remove(audio_path)
+        os.remove(processed_path)
+        os.remove(denoised_path)
+
+        return jsonify({
+            "accent_score": round(score, 2),
+            "accent_similarity": round(similarity, 2),
+            "best_voice": best_voice
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/analyze', methods=['POST'])
 def analyze_pronunciation():
     try:

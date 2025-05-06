@@ -14,6 +14,8 @@ from scipy.spatial.distance import euclidean
 from rapidfuzz import fuzz
 from dotenv import load_dotenv
 import openai
+from google.cloud import speech
+load_dotenv()
 
 app = Flask(__name__)
 score_model = joblib.load("score_classifier_model.pkl")
@@ -37,10 +39,19 @@ def extract_mfcc(file_path, n_mfcc=13):
     y, sr = librosa.load(file_path, sr=16000)
     return librosa.feature.mfcc(y=y, sr=sr, n_mfcc=n_mfcc).T
 
+import ffmpeg
+
 def preprocess_audio(input_file, output_file, target_sr=16000):
-    y, sr = librosa.load(input_file, sr=target_sr, mono=True)
-    sf.write(output_file, y, target_sr)
+    try:
+        ffmpeg.input(input_file).output(output_file, ar=target_sr).run(overwrite_output=True)
+    except Exception as e:
+        raise RuntimeError(f"FFmpeg conversion failed: {e}")
+    y, sr = librosa.load(output_file, sr=target_sr, mono=True)
+    sf.write(output_file, y, sr)
     return output_file
+
+def normalize(text):
+    return re.sub(r'[^\w\s]', '', text).lower().strip()
 
 def remove_noise(audio_path):
     y, sr = librosa.load(audio_path, sr=16000)
@@ -78,7 +89,12 @@ def generate_speech_if_not_exists(text, voices):
     load_dotenv()
     openai.api_key = os.getenv("OPENAI_API_KEY")
     reference_mfccs = {}
-    for voice, file_path in voices.items():
+
+    for voice in voices:
+        # Unique file per sentence + voice
+        safe_text = re.sub(r'\W+', '_', text.lower())[:30]
+        file_path = f"refs/{voice}_{safe_text}.wav"
+
         if not os.path.exists(file_path):
             response = openai.audio.speech.create(
                 model="tts-1",
@@ -87,10 +103,106 @@ def generate_speech_if_not_exists(text, voices):
             )
             with open(file_path, "wb") as f:
                 f.write(response.content)
+
         reference_mfccs[voice] = extract_mfcc(file_path)
+
     return reference_mfccs
 
 # ----------------- Analyze Route -----------------
+@app.route('/analyze_audio', methods=['POST'])
+def analyze_audio():
+    try:
+        audio_file = request.files.get('audio')
+        sentence = request.form.get('target_sentence', '').strip()
+
+        if not audio_file or not sentence:
+            return jsonify({"error": "Missing audio or sentence"}), 400
+
+        # Save uploaded file
+        filename = f"user_audio_{uuid.uuid4().hex}.webm"
+        audio_path = os.path.join("temp", filename)
+        audio_file.save(audio_path)
+
+        # Convert to WAV
+        processed_path = preprocess_audio(audio_path, "processed.wav")
+        denoised_path = remove_noise(processed_path)
+
+        # ✅ Google Speech-to-Text: Transcribe user speech
+        client = speech.SpeechClient()
+        with open(denoised_path, "rb") as audio_file:
+                content = audio_file.read()
+
+        audio = speech.RecognitionAudio(content=content)
+        config = speech.RecognitionConfig(
+                encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
+                sample_rate_hertz=16000,
+                language_code="en-US"
+            )
+
+        print("📥 Sending audio to Google STT...")
+        try:
+            response = client.recognize(config=config, audio=audio)
+            print("📝 Google STT response received:", response)
+        except Exception as e:
+            print("❌ Google STT error:", e)
+            return jsonify({"error": "Google STT failed", "details": str(e)}), 500
+
+        user_transcript = " ".join([r.alternatives[0].transcript for r in response.results]).strip()
+
+        from rapidfuzz import fuzz
+
+        def word_match_ratio(ref, hypo):
+            ref_words = ref.lower().strip().split()
+            hypo_words = hypo.lower().strip().split()
+            matches = sum(1 for r, h in zip(ref_words, hypo_words) if r == h)
+            return (matches / len(ref_words)) * 100 if ref_words else 0
+
+        similarity = fuzz.ratio(normalize(user_transcript), normalize(sentence))
+        word_match = word_match_ratio(normalize(sentence), normalize(user_transcript))
+
+        # Calculate combined similarity using both transcript similarity and accent similarity
+        combined_similarity = 0  # fallback if no accent score yet
+
+
+        if similarity < 85 or word_match < 70:
+            return jsonify({
+                "transcription": user_transcript,
+                "target_sentence": sentence,
+                "similarity": round(similarity, 2),
+                "word_match": round(word_match, 2),
+                "error": "Spoken sentence doesn't match target sentence closely enough.",
+                "score": 0
+            }), 200
+
+       # ✅ Compare accent
+        user_mfcc = extract_mfcc(denoised_path)
+        reference_mfccs = generate_speech_if_not_exists(sentence, REFERENCE_AUDIO_FILES["male"])
+        best_voice, accent_similarity = compare_with_multiple_references(user_mfcc, reference_mfccs)  # ✅ renamed
+        score = predict_score_from_similarity(accent_similarity)
+
+        # Combine the similarity and accent similarity
+        combined_similarity = (similarity + accent_similarity) / 2
+        bonus = 0.5 if combined_similarity >= 80 else 0.0
+
+        # Cleanup
+        os.remove(audio_path)
+        os.remove(processed_path)
+        os.remove(denoised_path)
+
+        return jsonify({
+        "transcription": user_transcript,
+        "target_sentence": sentence,
+        "similarity": round(similarity, 2),
+        "word_match": round(word_match, 2),
+        "accent_similarity": round(accent_similarity, 2),
+        "accent_score": round(score, 2),
+        "combined_similarity": round(combined_similarity, 2),
+        "bonus_score": bonus
+    })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/analyze', methods=['POST'])
 def analyze_pronunciation():
     try:

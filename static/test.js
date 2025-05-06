@@ -102,7 +102,7 @@ async function loadSentences() {
         const snapshot = await db.collection("sentences").get();
 
         snapshot.forEach(doc => {
-            const level = doc.id;  
+            const level = doc.id;
             const data = doc.data();
 
             if (Array.isArray(data.list)) {
@@ -118,7 +118,6 @@ async function loadSentences() {
         document.getElementById("test-sentence").textContent = "Error loading sentences.";
     }
 }
-
 function generateSentence() {
     document.getElementById("test-result").innerHTML = "";
 
@@ -161,107 +160,88 @@ function generateSentence() {
     }
 
     // ✅ Display next sentence
-    document.getElementById("test-sentence").textContent = remaining[0];
+    const nextSentence = remaining[0];
+    document.getElementById("test-sentence").textContent = nextSentence;
     document.getElementById("start-speech-btn").disabled = false;
+    document.getElementById("stop-recording-btn").disabled = true;  // Reset state
+    document.getElementById("test-result").textContent = "🎯 Please read the sentence   ...";
 
-    console.log("📜 Sentence for", levelKey, "→", remaining[0]);
+    console.log("📜 Sentence for", levelKey, "→", nextSentence);
 }
 
-function initializeSpeechRecognition() {
-    if (!recognition) {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        recognition = new SpeechRecognition();
+let mediaRecorder;
+let recordedChunks = [];
 
-        recognition.continuous = false;
-        recognition.interimResults = false;
-        recognition.lang = "en-US";
+async function startAudioRecording() {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    
+    // ✅ Set correct MIME type for better compatibility
+    mediaRecorder = new MediaRecorder(stream, {
+        mimeType: "audio/webm;codecs=opus"
+    });
 
-        recognition.onstart = function () {
-            console.log("🎙️ Speech Recognition Started");
-            document.getElementById("test-result").textContent = "Listening...";
-            document.getElementById("stop-speech-btn").disabled = false;
-        };
+    recordedChunks = [];
 
-        recognition.onspeechend = function () {
-            console.log("🛑 Speech ended, stopping recognition...");
-            recognition.stop();
-        };
+    mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+            recordedChunks.push(event.data);
+        }
+    };
 
-        recognition.onresult = function (event) {
-            let userSpeech = event.results[0][0].transcript;
-            let targetSentence = document.getElementById("test-sentence").textContent;
-            analyzeSpeech(targetSentence, userSpeech);
-        };
+    mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunks, { type: "audio/webm" });
+        const formData = new FormData();
+        formData.append("audio", blob, "user_audio.webm");
 
-        recognition.onerror = function (event) {
-            console.error(`❌ Speech recognition error: ${event.error}`);
-            alert(`Error with speech recognition: ${event.error}`);
-        };
-    }
-}
+        // Replace this if your sentence is dynamic
+        const sentence = document.getElementById("test-sentence").innerText.trim();
+        formData.append("target_sentence", sentence);
 
-function startSpeechRecognition() {
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-        alert("❌ Speech Recognition is not supported in this browser.");
-        return;
-    }
 
-    if (recognition && recognition.running) {
-        console.warn("⚠️ Speech recognition already running.");
-        return;
-    }
-
-    navigator.mediaDevices.getUserMedia({ audio: true })
-        .then(() => {
-            recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-            recognition.continuous = false;
-            recognition.interimResults = false;
-            recognition.lang = "en-US";
-
-            recognition.onstart = function () {
-                document.getElementById("test-result").textContent = "Listening...";
-                document.getElementById("stop-speech-btn").disabled = false;
-            };
-
-            let silenceTimer;
-            recognition.onstart = function () {
-                document.getElementById("test-result").textContent = "Listening...";
-                document.getElementById("stop-speech-btn").disabled = false;
-
-                // Start fallback timeout
-                silenceTimer = setTimeout(() => recognition.stop(), 5000);
-            };
-
-            recognition.onspeechend = function () {
-                if (silenceTimer) clearTimeout(silenceTimer);
-                silenceTimer = setTimeout(() => recognition.stop(), 2500);
-            };
-
-            recognition.onend = function () {
-                clearTimeout(silenceTimer);
-            };
-
-            recognition.onresult = function (event) {
-                let userSpeech = event.results[0][0].transcript;
-                let targetSentence = document.getElementById("test-sentence").textContent;
-                analyzeSpeech(targetSentence, userSpeech);
-            };
-
-            recognition.onerror = function (event) {
-                alert(`Error with speech recognition: ${event.error}`);
-            };
-
-            recognition.start();
+        fetch("/analyze_audio", {
+            method: "POST",
+            body: formData
         })
-        .catch(error => {
-            alert("❌ Microphone access is blocked.");
+        .then(response => response.json())
+        .then(data => {
+            console.log("🎯 Backend Response:", data);
+            if (data.error) {
+                showResult(`❌ ${data.error}`, 0, 0);
+            } else {
+                showResult(
+                    `✅ You said: ${data.transcription}<br>
+                     🎯 Target: ${data.target_sentence}<br>
+                     🔍 Accent Similarity: ${data.accent_similarity}%<br>
+                     📏 Sentence Similarity: ${data.similarity}%<br>
+                     🔀 Word Match: ${data.word_match}%`,
+                    data.accent_score,
+                    data.combined_similarity,
+                    data.bonus_score
+                );                            
+            }
         });
+    }        
+
+    mediaRecorder.start();
+    console.log("🎙 Recording started");
+    document.getElementById("start-speech-btn").disabled = true;
+document.getElementById("stop-recording-btn").disabled = false;
+
 }
 
-function stopSpeechRecognition() {
-    if (recognition) recognition.stop();
-    document.getElementById("test-result").textContent = "Speech recognition stopped.";
-    document.getElementById("stop-speech-btn").disabled = true;
+function stopAudioRecording() {
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        mediaRecorder.stop();
+        console.log("🛑 Recording stopped");
+    }
+    document.getElementById("stop-recording-btn").disabled = true;
+document.getElementById("start-speech-btn").disabled = false;
+
+}
+
+function showResult(message, score) {
+    const resultBox = document.getElementById("test-result");
+    resultBox.innerHTML = `${message}<br><strong>Score:</strong> ${score}/5`;
 }
 
 function playNativeCustom() {
@@ -275,116 +255,24 @@ function playNativeCustom() {
     });
 }
 
-document.addEventListener("DOMContentLoaded", function () {
+    document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("next-level-btn")?.addEventListener("click", nextLevel);
 });
 
-function analyzeSpeech(targetSentence, userSpeech) {
-    const user = auth.currentUser;
-    const userId = user?.uid || null;
-    const levelKey = ["basic", "intermediateLow", "intermediateHigh", "advanced", "native"][currentLevelIndex];
-    const totalSentences = 10;
+function showResult(message, score, combinedSimilarity = 0, bonus = 0) {
+    const resultBox = document.getElementById("test-result");
+    resultBox.innerHTML = `
+        ${message}<br>
+        <strong>Accent Score:</strong> ${score}/5<br>
+        <strong>Combined Similarity:</strong> ${combinedSimilarity}%<br>
+        <strong>Bonus:</strong> ${bonus > 0 ? "+0.5 ✅" : "None ❌"}
+    `;
 
-    if (!targetSentence || !userSpeech) return;
-
-    if (levelSentenceCount >= totalSentences || !usedSentences[levelKey] || usedSentences[levelKey].length === 0) {
-        alert("✅ You’ve already completed all 10 questions!");
-        return;
-    }
-
-    fetch('/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            target_sentence: targetSentence.trim(),
-            user_speech: userSpeech.trim(),
-            strictness: ["medium", "high", "very_high"][currentLevelIndex],
-            language: "en-US"
-        })
-    })
-    .then(async res => {
-        if (!res.ok) {
-            const err = await res.json();
-            throw new Error(err.error || "Server error");
-        }
-        return res.json();
-    })
-    .then(result => {
-        const accuracy = result.accuracy || 0;
-        const transcription = result.transcription || '';
-        const similarity = result.similarity || 0;
-        const wordMatch = result.word_match || 0;
-        const accentMistakes = result.accent_issues || [];
-        const accentSimilarity = result.accent_similarity || 0;
-        const combinedScore = (accuracy + accentSimilarity) / 2;
-
-        if (result.audio_url) {
-            document.getElementById("nativeAudio").src = result.audio_url;
-        }
-
-        if (transcription.trim() === '' || similarity < 60 || wordMatch < 80) {
-            document.getElementById("test-result").innerHTML = `
-                <p style="color: red; font-weight: bold;">⚠️ Your sentence didn’t match well enough. Please try again.</p>
-                <p><strong>Transcribed:</strong> "${transcription}"</p>
-                <p><strong>Similarity:</strong> ${similarity.toFixed(2)}%</p>
-                <p><strong>Word Match:</strong> ${wordMatch.toFixed(2)}%</p>
-                <p style="color: #1976d2;"><strong>🧮 Combined Score:</strong> ${combinedScore.toFixed(2)}%</p>
-            `;
-            return;
-        }
-
-        usedSentences[levelKey].shift();
-        if (accuracy >= 85 && combinedScore >= 50) levelCorrectCount++;
-        levelSentenceCount++;
-
-        let accentFeedback = '';
-        if (accentMistakes.length > 0 && accuracy < 80) {
-            const tips = accentMistakes.map(pair => {
-                const phoneme = pair.split('→')[0].trim();
-                return phonemeLabels[phoneme] || phoneme;
-            });
-            const uniqueTips = [...new Set(tips)];
-            accentFeedback = `
-                <p style="color: #ff9800; font-weight: bold;">
-                    🟠 Accent Tips:
-                </p>
-                <p style="color: #444; margin-top: -10px;">
-                    Try improving these sounds: ${uniqueTips.join(', ')}
-                </p>
-            `;
-        }
-
-        const highlighted = highlightDifferences(targetSentence, transcription);
-
-        document.getElementById("test-result").innerHTML = `
-            <p><strong>Target Sentence:</strong> "${targetSentence}"</p>
-            <p><strong>Your Speech:</strong> ${highlighted}</p>
-            <p><strong>Word Match:</strong> ${wordMatch.toFixed(2)}%</p>
-            <p style="color: #1976d2;"><strong>🧮 Combined Score:</strong> ${combinedScore.toFixed(2)}%</p>
-            ${accentFeedback}
-        `;
-
-        document.getElementById("raw-score-detail").textContent = `(Correct: ${levelCorrectCount} / ${totalSentences})`;
-        document.getElementById("normalized-score").textContent = ((levelCorrectCount / totalSentences) * 5).toFixed(2);
-
-        const progressBar = document.getElementById('level-progress');
-        if (progressBar) {
-            progressBar.max = totalSentences;
-            progressBar.value = levelSentenceCount;
-        }
-
-        const levelScore = (levelCorrectCount / totalSentences) * 5;
-
-        if (levelSentenceCount === totalSentences || (levelSentenceCount >= 5 && levelScore >= 3.5)) {
-            evaluateLevelProgress(userId);
-        }
-
-    })
-    .catch(error => {
-        console.error("❌ Error analyzing speech:", error);
-        alert("❌ Failed to analyze speech: " + error.message);
-    });
+    // ✅ Add to progress tracking
+    if (combinedSimilarity >= 80) levelCorrectCount += 0.5;
+    levelSentenceCount += 1;
 }
+
 
 function highlightDifferences(target, user) {
     const clean = normalizeText;
@@ -634,7 +522,6 @@ function resetUserLevel() {
   }  
 
   document.addEventListener("DOMContentLoaded", function () {
-    initializeSpeechRecognition();
     loadSentences();
 
     auth.onAuthStateChanged(user => {
@@ -660,7 +547,10 @@ function resetUserLevel() {
             }
 
             document.getElementById("generate-btn")?.addEventListener("click", generateSentence);
-            document.getElementById("start-speech-btn")?.addEventListener("click", () => startSpeechRecognition(user.uid));
+            document.getElementById("start-speech-btn")?.addEventListener("click", startAudioRecording);
+            document.getElementById("stop-recording-btn")?.addEventListener("click", stopAudioRecording);  // ✅ <-- ADD THIS LINE
+
+
         }
     });
 });
