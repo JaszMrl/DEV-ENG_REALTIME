@@ -16,7 +16,14 @@ const translations = {
       language_pref: "🌍 Language Preferences",
       feedback_label: "💡 Feedback & Suggestions",
       save_btn: "Save",
-      send_btn: "Send"
+      send_btn: "Send",
+      recent_activity: "Recent Activity",
+      last_test: "Last test:",
+      your_score: "Your Score:",
+      your_level: "Your Level:",
+      all_levels_completed: "All Levels Completed",
+      current_streak: "Current Streak",
+      overall_accuracy: "Your Overall Accuracy:",
     },
     th: {
       // Sidebar
@@ -33,7 +40,15 @@ const translations = {
       language_pref: "🌍 การตั้งค่าภาษา",
       feedback_label: "💡 ข้อเสนอแนะและคำติชม",
       save_btn: "บันทึก",
-      send_btn: "ส่ง"
+      send_btn: "ส่ง",
+
+      recent_activity: "กิจกรรมล่าสุด",
+      last_test: "การทดสอบล่าสุด:",
+      your_score: "คะแนนของคุณ:",
+      your_level: "ระดับของคุณ:",
+      all_levels_completed: "เรียนจบทุกระดับแล้ว",
+      current_streak: "จำนวนวันที่ทำต่อเนื่อง",
+      overall_accuracy: "ความแม่นยำรวมของคุณ:",
     }
   };
   

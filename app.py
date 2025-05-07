@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 import openai
 from google.cloud import speech
 load_dotenv()
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "google-credentials.json"
 
 app = Flask(__name__)
 score_model = joblib.load("score_classifier_model.pkl")
@@ -43,11 +44,7 @@ import ffmpeg
 
 def preprocess_audio(input_file, output_file, target_sr=16000):
     try:
-        # If input is webm, we specify opus audio codec conversion
-        if input_file.endswith('.webm'):
-            ffmpeg.input(input_file).output(output_file, ar=target_sr, acodec='pcm_s16le').run(overwrite_output=True)
-        else:
-            ffmpeg.input(input_file).output(output_file, ar=target_sr).run(overwrite_output=True)
+        ffmpeg.input(input_file).output(output_file, ar=target_sr).run(overwrite_output=True)
     except Exception as e:
         raise RuntimeError(f"FFmpeg conversion failed: {e}")
     y, sr = librosa.load(output_file, sr=target_sr, mono=True)

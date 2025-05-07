@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>English Learning App</title>
     <link rel="stylesheet" href="/static/styles.css">
+    <script src="{{ url_for('static', filename='lang.js') }}"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">\
     <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-auth-compat.js"></script>
@@ -251,22 +252,26 @@
             </div>
             <div class="dashboard-cards">
               <div class="dashboard-card">
-                <h3>🧠 Recent Activity</h3>
-                <p id="recent-activity" style="margin-top: 10px; font-size: 0.9rem;">Last test: –</p>
+                <h3><span data-i18n="recent_activity"></span></h3>
+                <p><span data-i18n="last_test"></span> <span id="recent-activity">...</span></p>
               </div>
+              
               <div class="dashboard-card">
-                <h3>📊 Your Overall Accuracy: <span id="user-accuracy">0.00%</span></h3>
+                <h3><span data-i18n="overall_accuracy"></span> <span id="user-accuracy">0.00%</span></h3>
               </div>
+              
               <div class="dashboard-card">
-                <h3>🔥 Current Streak</h3>
+                <h3 data-i18n="current_streak"></h3>
                 <span id="timer">00 days 00:00:00</span>
               </div>
+              
               <div class="dashboard-card">
-                <h3>🏆 Your Score: <span id="user-score">0</span></h3>
+                <h3><span data-i18n="your_score"></span> <span id="user-score">0</span></h3>
               </div>
+              
               <div class="dashboard-card">
-                <h3>🎯 Your Level: <span id="user-level">Basic/Beginner</span></h3>
-              </div>
+                <h3><span data-i18n="your_level"></span> <span id="user-level">Basic/Beginner</span></h3>
+              </div>              
             </div>
           </section>
         </div>
@@ -570,6 +575,46 @@
           }
         });
       }
+      function showFinalScore(score) {
+    const finalModal = document.getElementById("final-score-modal");
+    const finalText = document.getElementById("final-score-text");
+    // ✅ SAVE final test results to Firestore
+        const user = auth.currentUser;
+        if (user) {
+            const userRef = db.collection("users").doc(user.uid);
+            userRef.set({
+                lastTestDate: new Date().toISOString(),
+                lastTestLevel: "All Levels Completed",
+                score: score,
+                isCompleted: true
+            }, { merge: true }).then(() => {
+                console.log("✅ Final score saved to Firestore:", {
+                    score,
+                    level: "All Levels Completed",
+                    completed: true
+                });
+            }).catch((err) => {
+                console.error("❌ Failed to save final score:", err);
+            });
+        }        
+
+    if (finalModal && finalText) {
+        finalModal.style.display = "flex";
+        document.body.style.overflow = "hidden";
+
+        if (score >= 12.5) {
+            finalText.innerHTML = `
+                🎉 <strong>Congratulations!</strong> You passed the full test.<br>
+                ✅ <strong>Your Final Score:</strong> ${score.toFixed(2)} / 25
+            `;
+        } else {
+            finalText.innerHTML = `
+                ⚠️ <strong>Keep practicing!</strong> You didn’t pass the full test.<br>
+                📉 <strong>Your Final Score:</strong> ${score.toFixed(2)} / 25
+            `;
+        }
+    }
+}
     
       document.addEventListener("DOMContentLoaded", showAdminLink);
       document.addEventListener("DOMContentLoaded", loadRecentActivity);

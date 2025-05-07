@@ -120,6 +120,7 @@ async function loadSentences() {
         document.getElementById("test-sentence").textContent = "Error loading sentences.";
     }
 }
+
 function generateSentence() {
     document.getElementById("test-result").innerHTML = "";
 
@@ -176,6 +177,7 @@ let recordedChunks = [];
 
 // Start audio recording
 async function startAudioRecording() {
+    recordedChunks = []; 
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
     mediaRecorder = new MediaRecorder(stream, {
@@ -203,27 +205,57 @@ async function startAudioRecording() {
         .then(response => response.json())
         .then(data => {
             console.log("🎯 Backend Response:", data);
+            const levelKey = ["basic", "intermediateLow", "intermediateHigh", "advanced", "native"][currentLevelIndex];
+        
             if (data.error) {
-                showResult(`❌ ${data.error}`, 0, 0, 0);
+                const spoken = data.transcription || "(not recognized)";
+                showResult(
+                    `<strong>Spoken:</strong> "${spoken}"`,
+                    0,
+                    0
+                );
             } else {
                 showResult(
-                    `✅ You said: ${data.transcription}<br>
-                     🎯 Target: ${data.target_sentence}<br>
-                     🔍 Accent Similarity: ${data.accent_similarity}%<br>
-                     📏 Sentence Similarity: ${data.similarity}%<br>
-                     🔀 Word Match: ${data.word_match}%`,
+                    `✅ You said: ${data.transcription}`,
                     data.accent_score,
-                    data.combined_similarity,
-                    data.bonus_score
-                );
+                    data.combined_similarity
+                );                
+                // ✅ Score tracking logic
+                // Always count each attempt
+                levelSentenceCount++;
+
+                // Only count as correct if combined similarity is at least 80%
+                if (data.combined_similarity >= 80) {
+                    levelCorrectCount++;
+                } else {
+                    console.log("❌ Not correct: Combined similarity too low");
+                }
+            }
+        
+            // ✅ Only shift sentence after a recording attempt
+            usedSentences[levelKey].shift();
+        
+            // ✅ Update UI
+            document.getElementById("raw-score-detail").textContent = `(Correct: ${levelCorrectCount} / 10)`;
+            document.getElementById("normalized-score").textContent = ((levelCorrectCount / 10) * 5).toFixed(2);
+        
+            // ✅ Save score to Firestore after every attempt
+            const user = auth.currentUser;
+            if (user) {
+                const levelScore = parseFloat(((levelCorrectCount / 10) * 5).toFixed(2));
+                const userRef = db.collection("users").doc(user.uid);
+                userRef.set({
+                    [`levelScores.${levels[currentLevelIndex]}`]: levelScore
+                }, { merge: true });
+            }
+
+            // ✅ Check progression
+            if (levelSentenceCount === 10) {
+                console.log("🟡 10 attempts reached, evaluating progress...");
+                evaluateLevelProgress();
             }
         })
-        .catch(error => {
-            console.error("❌ Error:", error);
-            showResult("❌ Error with the backend request.", 0, 0);
-        });
-    };
-
+    }        
     mediaRecorder.start();
     console.log("🎙 Recording started");
     document.getElementById("start-speech-btn").disabled = true;
@@ -240,14 +272,41 @@ function stopAudioRecording() {
     document.getElementById("start-speech-btn").disabled = false;
 }
 
-// Show result
-function showResult(message, accentScore, combinedSimilarity, bonusScore) {
+function showResult(message, accentScore = 0, combinedSimilarity = 0) {
     const resultBox = document.getElementById("test-result");
+
+    let bg = "#f0f0f0", textColor = "#000", border = "#ccc";
+
+    if (combinedSimilarity >= 90) {
+        bg = "#d4edda";         // greenish
+        textColor = "#155724";
+        border = "#28a745";
+    } else if (combinedSimilarity >= 70) {
+        bg = "#fff3cd";         // yellowish
+        textColor = "#856404";
+        border = "#ffc107";
+    } else {
+        bg = "#f8d7da";         // reddish
+        textColor = "#721c24";
+        border = "#dc3545";
+    }
+
     resultBox.innerHTML = `
         ${message}<br>
-        <strong>Accent Score:</strong> ${accentScore}/5<br>
-        <strong>Combined Similarity:</strong> ${combinedSimilarity}%<br>
-        <strong>Bonus:</strong> ${bonusScore > 0 ? "+0.5 ✅" : "None ❌"}`;
+        <strong>Accent Score:</strong> ${accentScore || 0}/5<br>
+        <div style="
+            background-color: ${bg};
+            color: ${textColor};
+            border: 2px solid ${border};
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 1.2em;
+        ">
+            📊 Combined Score: ${combinedSimilarity?.toFixed(1) || "0.0"}%
+        </div>
+    `;
 }
 
 // Analyze audio
@@ -258,15 +317,13 @@ function analyzeAudio(formData) {
     })
     .then(response => response.json())
     .then(data => {
-        const { transcription, accuracy, similarity, word_match, accent_similarity } = data;
+        const { transcription, accuracy, accent_similarity } = data;
 
         const combinedScore = (accuracy + accent_similarity) / 2;
 
         document.getElementById("test-result").innerHTML = `
-            <p><strong>Target Sentence:</strong> "${document.getElementById("test-sentence").textContent}"</p>
             <p><strong>Your Speech:</strong> ${transcription}</p>
-            <p><strong>Word Match:</strong> ${word_match}%</p>
-            <p><strong>🧮 Combined Score:</strong> ${combinedScore}%</p>
+             <strong>📊 Combined Score:</strong> <strong>${combinedSimilarity?.toFixed(1) || "0.0"}%</strong>
         `;
 
         // Update score and level progress
@@ -287,45 +344,112 @@ function analyzeAudio(formData) {
     });
 }
 
-// Evaluate level progression
 function evaluateLevelProgress() {
-    // Ensure we calculate level score (out of 5)
+    console.log("✅ evaluateLevelProgress() called");
+    // ✅ Calculate level score (out of 5)
     let levelScore = (levelCorrectCount / 10) * 5;
     levelScore = parseFloat(levelScore.toFixed(2));
 
-    // Update normalized score on the UI
+    // ✅ Update UI
     const scoreDisplay = document.getElementById('normalized-score');
     const detailDisplay = document.getElementById('raw-score-detail');
     if (scoreDisplay) scoreDisplay.textContent = levelScore.toFixed(2);
     if (detailDisplay) detailDisplay.textContent = `(Correct: ${levelCorrectCount} / 10)`;
 
-    // Save level score to Firestore for tracking
-    const userRef = db.collection("users").doc(auth.currentUser.uid);
-    userRef.set({
-        [`levelScores.${levels[currentLevelIndex]}`]: levelScore
-    }, { merge: true });
+    // ✅ Save score to Firestore
+    const user = auth.currentUser;
+    if (user) {
+        const userRef = db.collection("users").doc(user.uid);
+        userRef.set({
+            [`levelScores.${levels[currentLevelIndex]}`]: levelScore
+        }, { merge: true });
+    }
 
-    // After saving, show level summary
+    // ✅ If it's the final level, show final score instead of next level
+    if (currentLevelIndex === levels.length - 1) {
+        showFinalScore(levelScore);
+        return; // ⛔️ Stop here
+    }
+
+    // ✅ Show level summary popup
     showLevelSummary(levelScore);
 
-    // Handle logic for moving to next level
-    if (levelCorrectCount >= 7 && levelSentenceCount >= 5) {
-        currentLevelIndex++;  // Move to the next level
-        if (currentLevelIndex >= levels.length) {
-            showFinalScore(levelScore);
+    const passed = levelCorrectCount >= 7 && levelSentenceCount >= 5;
+
+    // ✅ Auto-progress if passed
+    if (passed) {
+        const nextBtn = document.getElementById("next-level-btn");
+        if (nextBtn) {
+            nextBtn.style.display = "none";
+            nextBtn.disabled = true;
+        }
+
+        setTimeout(() => {
+            nextLevel();
+        }, 1500);
+    }
+}
+
+function showFinalScore(score) {
+    const finalModal = document.getElementById("final-score-modal");
+    const finalText = document.getElementById("final-score-text");
+    // ✅ SAVE final test results to Firestore
+        const user = auth.currentUser;
+        if (user) {
+            const userRef = db.collection("users").doc(user.uid);
+            userRef.set({
+                lastTestDate: new Date().toISOString(),
+                lastTestLevel: "All Levels Completed",
+                score: score,
+                isCompleted: true
+            }, { merge: true }).then(() => {
+                console.log("✅ Final score saved to Firestore:", {
+                    score,
+                    level: "All Levels Completed",
+                    completed: true
+                });
+            }).catch((err) => {
+                console.error("❌ Failed to save final score:", err);
+            });
+        }        
+
+    if (finalModal && finalText) {
+        finalModal.style.display = "flex";
+        document.body.style.overflow = "hidden";
+
+        if (score >= 12.5) {
+            finalText.innerHTML = `
+                🎉 <strong>Congratulations!</strong> You passed the full test.<br>
+                ✅ <strong>Your Final Score:</strong> ${score.toFixed(2)} / 25
+            `;
         } else {
-            generateSentence();  // Generate next sentence for the next level
+            finalText.innerHTML = `
+                ⚠️ <strong>Keep practicing!</strong> You didn’t pass the full test.<br>
+                📉 <strong>Your Final Score:</strong> ${score.toFixed(2)} / 25
+            `;
         }
     }
 }
 
-// Show level summary
+function closeFinalModal() {
+    const finalModal = document.getElementById("final-score-modal");
+    if (finalModal) {
+        finalModal.style.display = "none";
+        document.body.style.overflow = "auto"; // 🔓 restore scroll
+    }
+}
+
 function showLevelSummary(score) {
     const box = document.getElementById("test-result-summary");
     const title = document.getElementById("result-title");
     const comment = document.getElementById("result-comment");
     const scoreText = document.getElementById("result-score");
     const nextBtn = document.getElementById("next-level-btn");
+
+    if (!box || !title || !comment || !scoreText || !nextBtn) {
+        console.warn("⛔ Missing one or more summary elements");
+        return;
+    }
 
     box.style.display = "block";
     scoreText.textContent = `Your Score: ${score.toFixed(2)} / 5`;
@@ -343,6 +467,7 @@ function showLevelSummary(score) {
 
     nextBtn.style.display = score >= 3.5 && currentLevelIndex < levels.length - 1 ? "inline-block" : "none";
 }
+
 
 // Move to the next level
 function nextLevel() {
@@ -368,21 +493,18 @@ function nextLevel() {
 
     console.log("➡️ Progressed to:", levels[currentLevelIndex]);
 
-    // 🔄 Reset tracking
+    // Reset progress
     levelCorrectCount = 0;
     levelSentenceCount = 0;
-
-    // ❗ Clear previous level's sentence memory
     usedSentences = {};
 
-    // 🧼 Reset score display
+    // Reset UI
     document.getElementById("normalized-score").textContent = '0.00';
     document.getElementById("raw-score-detail").textContent = '(Correct: 0 / 0)';
-    //document.getElementById("accent-similarity").innerHTML = "";
     document.getElementById("test-result-summary").style.display = "none";
     document.getElementById("level-score-ui").style.display = "block";
 
-    // 🧠 Save to Firestore
+    // Save new level
     const user = auth.currentUser;
     if (user) {
         const userRef = db.collection("users").doc(user.uid);
@@ -392,16 +514,16 @@ function nextLevel() {
         db.collection("users").doc(user.uid).update({
             [`levelQuestions.${previousKey}`]: firebase.firestore.FieldValue.delete()
         });
-    } else {
-        console.log("👤 Guest user: skipping Firestore update");
     }
 
     generateSentence();
 
+    // ✅ Reset lock AFTER generateSentence completes
     setTimeout(() => {
         isNextLevelLocked = false;
-    }, 500);
+    }, 300);
 }
+
 function playNativeCustom() {
     const sentence = document.getElementById("test-sentence").textContent;
     if (!sentence || sentence.includes("Generate")) {
@@ -474,4 +596,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
         }
     });
+});
+
+document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape") {
+        closeFinalModal();
+    }
 });

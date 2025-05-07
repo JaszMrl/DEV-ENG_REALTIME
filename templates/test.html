@@ -162,7 +162,74 @@
 #stop-recording-btn:hover {
   background-color: #b02a37;
 }
+.highlight-score {
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-weight: bold;
+    display: inline-block;
+    margin-left: 5px;
+    font-size: 1.1em;
+}
 
+@media (prefers-color-scheme: dark) {
+    .highlight-score {
+        background-color: #1e1e2f;
+        color: #ffffff;
+        border: 2px solid #00bcd4;
+    }
+}
+
+@media (prefers-color-scheme: light) {
+    .highlight-score {
+        background-color: #f0f9ff;
+        color: #007bff;
+        border: 2px solid #007bff;
+    }
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: none; /* initially hidden */
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.modal-box {
+    background: #fff;
+    padding: 20px 30px;
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    position: relative;
+    animation: fadeIn 0.3s ease;
+}
+
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #888;
+}
+.modal-box {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+
+}
 
   </style>
 </head>
@@ -224,36 +291,34 @@
                 <button class="Start-timer" id="start-speech-btn" onclick="startAudioRecording()">🎙️ Start Recording</button>
                 <button id="stop-recording-btn" disabled>🛑 Stop Recording</button>
 
+                <!-- ✅ Final Score Modal -->
+              <div id="final-score-modal" class="modal-overlay">
+                <div class="modal-box">
+                  <button class="close-btn" onclick="closeFinalModal()">✖</button>
+                  <h3>🏁 All Levels Complete!</h3>
+                  <p>Congratulations! You finished the test.</p>
+                  <p id="final-score-text"></p>
+                </div>
+              </div>
+                    <!-- Level Summary Box -->
+                    <div id="test-result-summary" class="result-box" style="display: none; margin-top: 20px;">
+                     <h3 id="result-title"></h3>
+                    <p id="result-comment"></p>
+                    <p id="result-score"></p>
+                     <button id="next-level-btn" style="display: none;">Next Level</button>
+                     </div>       
+
                 <h2>Speech Test Result</h2>
                 <div id="test-result" class="result-box">
                   <p><strong>🎤 Your Speech:</strong> <span id="spoken-sentence">...</span></p>
-                  <p><strong>🎯 Target Sentence:</strong> <span id="target-sentence-text">...</span></p>
-                  <p><strong>✅ Similarity:</strong> <span id="similarity-score">...</span>%</p>
-                  <p><strong>🗣️ Accent Similarity:</strong> <span id="accent-similarity-score">...</span>%</p>
                   <p><strong>🏆 Combined Score:</strong> <span id="combined-score">...</span>%</p>
               </div>
-              
-                
+
                 <!-- ✅ NEW SCORE DISPLAY SECTION -->
                 <div id="level-score-ui">
                   <h3>Level Score: <span id="normalized-score">0.00</span>/5</h3>
                   <p id="raw-score-detail">(Correct: 0 / 10)</p>
-              </div>              
-
-                <!-- 🎯 Score Summary Box -->
-                <div id="test-result-summary" style="display: none; margin-top: 20px;" class="result-box">
-                  <h3 id="result-title"></h3>
-                  <p id="result-comment"></p>
-                  <p id="result-score"></p>
-                  <button id="next-level-btn" onclick="nextLevel()" style="display: none;">Continue to Next Level</button>
-              </div>              
-
-                <!-- Final Score Box -->
-                <div id="final-score-summary" class="result-box" style="display: none; margin-top: 20px;">
-                  <h3>🏁 All Levels Complete!</h3>
-                  <p>Congratulations! You finished the test.</p>
-                  <p id="final-score-text"></p>
-              </div>                              
+              </div>                                                 
 
                 <!-- ✅ Back to Home Button -->
                 <div class="back-home-container">
