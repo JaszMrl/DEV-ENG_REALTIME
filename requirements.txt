@@ -1,19 +1,39 @@
-Flask==2.3.3                   # Web framework
-pronouncing==0.2.0            # Phoneme extraction
-python-Levenshtein==0.21.0    # Phoneme similarity scoring
-gTTS==2.3.2                   # Google Text-to-Speech
-librosa==0.10.1               # Audio processing
-numpy==1.26.4                 # Numerical computing
-soundfile==0.12.1             # Reading/writing sound files
-google-cloud-speech==2.25.1   # Google Speech-to-Text API
-google-auth==2.28.1           # Authentication for Google APIs
-fastdtw==0.3.4                # Dynamic Time Warping
-scipy==1.13.0                 # Scientific computing
-noisereduce==2.0.1            # Noise reduction for audio
-openai==1.23.2                # OpenAI API client
-rapidfuzz==3.5.2              # String similarity metrics
-sounddevice==0.4.6            # Real-time audio recording/playback
-wavio==0.0.6                  # WAV file handling
-keyboard==0.13.5              # Keyboard event handling
-gunicorn==21.2.0              # WSGI HTTP server for deployment
-scikit-learn==1.5.1
+# === Web Framework ===
+Flask==2.3.3                     # Web framework for backend
+
+# === Audio Processing ===
+librosa==0.10.1                 # Audio feature extraction (e.g., MFCC)
+soundfile==0.12.1               # Read/write WAV files
+noisereduce==2.0.1              # Denoising audio
+wavio==0.0.6                    # Additional WAV file I/O
+sounddevice==0.4.6              # Real-time audio recording/playback
+
+# === Machine Learning & Math ===
+numpy==1.26.4                   # Numerical computing
+scipy==1.13.0                   # Scientific computing
+scikit-learn==1.5.1             # ML model for scoring accent
+
+# === Speech Recognition & TTS ===
+gTTS==2.3.2                     # Google Text-to-Speech (for temporary TTS)
+google-cloud-speech==2.25.1     # Google Speech-to-Text
+google-auth==2.28.1             # Required by Google Cloud APIs
+openai==1.23.2                  # OpenAI API for native speech synthesis
+
+# === String/Text Similarity & NLP ===
+pronouncing==0.2.0              # Extract phonemes from words
+python-Levenshtein==0.21.0      # Levenshtein distance for phoneme similarity
+rapidfuzz==3.5.2                # Fast text similarity scoring
+difflib                         # Built-in; for sequence matching
+
+# === Audio Comparison Algorithms ===
+fastdtw==0.3.4                  # Fast Dynamic Time Warping
+uuid                            # Built-in; for unique filenames
+
+# === Input Devices / Misc ===
+keyboard==0.13.5                # Detect keyboard events (if needed)
+
+# === Deployment ===
+gunicorn==21.2.0                # Production WSGI server
+
+# === Environment Variables ===
+python-dotenv==1.0.1            # Load environment variables from .env
