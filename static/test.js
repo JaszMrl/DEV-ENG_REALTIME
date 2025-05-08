@@ -90,8 +90,6 @@ let finalLevelCompleted = false; // ✅ NEW FLAG
 let levelEvaluationTriggered;
 let isNextLevelLocked = false;  // ✅ ADD THIS LINE
 
-
-
 const user = firebase.auth().currentUser;
 if (user) {
   firebase.firestore().collection("users").doc(user.uid).set({
@@ -150,9 +148,9 @@ function generateSentence() {
         if (user) {
             const userRef = db.collection("users").doc(user.uid);
             userRef.set({
-                [`levelQuestions.${levelKey.replaceAll('.', '_')}`]: selected
+              [`levelQuestions.${levelKey.replaceAll('.', '_')}`]: selected
             }, { merge: true });
-        }
+          }          
     }
 
     const remaining = usedSentences[levelKey];
@@ -242,11 +240,11 @@ async function startAudioRecording() {
             // ✅ Save score to Firestore after every attempt
             const user = auth.currentUser;
             if (user) {
-                const levelScore = parseFloat(((levelCorrectCount / 10) * 5).toFixed(2));
-                const userRef = db.collection("users").doc(user.uid);
-                userRef.set({
-                    [`levelScores.${levels[currentLevelIndex]}`]: levelScore
-                }, { merge: true });
+            const levelScore = parseFloat(((levelCorrectCount / 10) * 5).toFixed(2));
+            const userRef = db.collection("users").doc(user.uid);
+            userRef.set({
+                [`levelScores.${levels[currentLevelIndex]}`]: levelScore
+            }, { merge: true });
             }
 
             // ✅ Check progression
@@ -359,10 +357,10 @@ function evaluateLevelProgress() {
     // ✅ Save score to Firestore
     const user = auth.currentUser;
     if (user) {
-        const userRef = db.collection("users").doc(user.uid);
-        userRef.set({
-            [`levelScores.${levels[currentLevelIndex]}`]: levelScore
-        }, { merge: true });
+    const userRef = db.collection("users").doc(user.uid);
+    userRef.set({
+        [`levelScores.${levels[currentLevelIndex]}`]: levelScore
+    }, { merge: true });
     }
 
     // ✅ If it's the final level, show final score instead of next level
@@ -507,13 +505,13 @@ function nextLevel() {
     // Save new level
     const user = auth.currentUser;
     if (user) {
-        const userRef = db.collection("users").doc(user.uid);
-        userRef.set({ currentLevel: currentLevelIndex }, { merge: true });
+    const userRef = db.collection("users").doc(user.uid);
+    userRef.set({ currentLevel: currentLevelIndex }, { merge: true });
 
-        const previousKey = ["basic", "intermediateLow", "intermediateHigh", "advanced", "native"][currentLevelIndex - 1];
-        db.collection("users").doc(user.uid).update({
-            [`levelQuestions.${previousKey}`]: firebase.firestore.FieldValue.delete()
-        });
+    const previousKey = ["basic", "intermediateLow", "intermediateHigh", "advanced", "native"][currentLevelIndex - 1];
+    db.collection("users").doc(user.uid).update({
+        [`levelQuestions.${previousKey}`]: firebase.firestore.FieldValue.delete()
+    });
     }
 
     generateSentence();
@@ -564,10 +562,16 @@ function resetUserLevel() {
     }
   } 
 
-document.addEventListener("DOMContentLoaded", function () {
-    loadSentences();
+  document.addEventListener("DOMContentLoaded", function () {
+    loadSentences();  // ✅ Make sure this runs once on page load
 
     auth.onAuthStateChanged(user => {
+        // ✅ Always bind test buttons
+        document.getElementById("generate-btn")?.addEventListener("click", generateSentence);
+        document.getElementById("start-speech-btn")?.addEventListener("click", startAudioRecording);
+        document.getElementById("stop-recording-btn")?.addEventListener("click", stopAudioRecording);
+
+        // ✅ Firestore logic for signed-in users
         if (user) {
             const userRef = db.collection("users").doc(user.uid);
             userRef.get().then(doc => {
@@ -581,25 +585,18 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             });
 
-            // ✅ Bind once only
             const btn = document.getElementById("next-level-btn");
             if (btn) {
-                const newBtn = btn.cloneNode(true); // remove all listeners
+                const newBtn = btn.cloneNode(true);
                 btn.parentNode.replaceChild(newBtn, btn);
                 newBtn.addEventListener("click", nextLevel);
             }
-
-            document.getElementById("generate-btn")?.addEventListener("click", generateSentence);
-            document.getElementById("start-speech-btn")?.addEventListener("click", startAudioRecording);
-            document.getElementById("stop-recording-btn")?.addEventListener("click", stopAudioRecording);  // ✅ <-- ADD THIS LINE
-
-
+        } else {
+            const warning = document.getElementById("guest-warning");
+            if (warning) {
+                warning.style.display = "block";
+                warning.textContent = "⚠️ You're in guest mode. Progress won't be saved.";
+            }
         }
     });
-});
-
-document.addEventListener("keydown", function (event) {
-    if (event.key === "Escape") {
-        closeFinalModal();
-    }
 });
