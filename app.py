@@ -19,7 +19,7 @@ load_dotenv()
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "google-credentials.json"
 
 app = Flask(__name__)
-score_model = joblib.load("score_classifier_model.pkl")
+score_model = joblib.load("logistic_model.pkl")
 
 REFERENCE_AUDIO_FILES = {
     "male": {
@@ -84,7 +84,9 @@ def compare_with_multiple_references(user_mfcc, reference_mfccs):
 
 def predict_score_from_similarity(similarity_percent):
     input_feature = np.array([[similarity_percent]])
-    return score_model.predict(input_feature)[0]
+    prediction = score_model.predict(input_feature)[0]
+    return int(prediction)  # convert NumPy int64 to plain int
+
 
 def generate_speech_if_not_exists(text, voices):
     load_dotenv()
@@ -164,22 +166,29 @@ def analyze_audio():
         # Calculate combined similarity using both transcript similarity and accent similarity
         combined_similarity = 0  # fallback if no accent score yet
 
-
         if similarity < 85 or word_match < 70:
             return jsonify({
                 "transcription": user_transcript,
                 "target_sentence": sentence,
                 "similarity": round(similarity, 2),
                 "word_match": round(word_match, 2),
-                "error": "Spoken sentence doesn't match target sentence closely enough.",
-                "score": 0
+                "accent_score": 0,
+                "combined_similarity": 0,
+                "score": 0,
+                "message": "Spoken sentence doesn't match target closely enough."
             }), 200
 
        # ✅ Compare accent
         user_mfcc = extract_mfcc(denoised_path)
         reference_mfccs = generate_speech_if_not_exists(sentence, REFERENCE_AUDIO_FILES["male"])
         best_voice, accent_similarity = compare_with_multiple_references(user_mfcc, reference_mfccs)  # ✅ renamed
-        score = predict_score_from_similarity(accent_similarity)
+        try:
+            print("📊 Predicting score from accent similarity:", accent_similarity)
+            score = predict_score_from_similarity(accent_similarity)
+        except Exception as e:
+            print("❌ Failed to predict score:", e)
+            return jsonify({"error": "Score prediction failed", "details": str(e)}), 500
+
 
         # Combine the similarity and accent similarity
         combined_similarity = (similarity + accent_similarity) / 2

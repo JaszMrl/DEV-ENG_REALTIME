@@ -258,6 +258,7 @@ async function startAudioRecording() {
     console.log("🎙 Recording started");
     document.getElementById("start-speech-btn").disabled = true;
     document.getElementById("stop-recording-btn").disabled = false;
+    document.getElementById("test-result").textContent = "🎧 Listening...";
 }
 
 // Stop audio recording
@@ -372,7 +373,9 @@ function evaluateLevelProgress() {
     // ✅ Show level summary popup
     showLevelSummary(levelScore);
 
-    const passed = levelCorrectCount >= 7 && levelSentenceCount >= 5;
+    const passed = levelScore >= 3.5;
+console.log("✅ Pass check → Score:", levelScore, "→ Passed:", passed);
+
 
     // ✅ Auto-progress if passed
     if (passed) {
